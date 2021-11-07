@@ -5586,8 +5586,6 @@ var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$GotSeed = function (a) {
 	return {$: 'GotSeed', a: a};
 };
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$random$Random$Generate = function (a) {
 	return {$: 'Generate', a: a};
 };
@@ -5772,82 +5770,8 @@ var $elm$random$Random$independentSeed = $elm$random$Random$Generator(
 			A4($elm$random$Random$map3, makeIndependentSeed, gen, gen, gen),
 			seed0);
 	});
-var $elm$core$Basics$round = _Basics_round;
-var $author$project$Main$maxPotential = function (_v0) {
-	var width = _v0.width;
-	var height = _v0.height;
-	return ($elm$core$Basics$round(width + height) / 4) | 0;
-};
-var $author$project$Main$new = function (flag) {
-	var _v0 = _Utils_Tuple2(
-		$elm$core$Basics$round(flag.width / 2),
-		$elm$core$Basics$round(flag.height / 2));
-	var x = _v0.a;
-	var y = _v0.b;
-	return {
-		grid: flag.grid,
-		height: flag.height,
-		player: _Utils_Tuple2(x, y),
-		potential: $author$project$Main$maxPotential(
-			{height: flag.height, width: flag.width}),
-		running: false,
-		seed: $elm$random$Random$initialSeed(42),
-		width: flag.width
-	};
-};
-var $author$project$Main$init = function (_v0) {
-	return _Utils_Tuple2(
-		$author$project$Main$new(
-			{grid: $elm$core$Dict$empty, height: 1, width: 1}),
-		A2($elm$random$Random$generate, $author$project$Main$GotSeed, $elm$random$Random$independentSeed));
-};
-var $author$project$Main$Frame = {$: 'Frame'};
-var $elm$core$Basics$always = F2(
-	function (a, _v0) {
-		return a;
-	});
-var $elm$time$Time$Every = F2(
-	function (a, b) {
-		return {$: 'Every', a: a, b: b};
-	});
-var $elm$time$Time$State = F2(
-	function (taggers, processes) {
-		return {processes: processes, taggers: taggers};
-	});
-var $elm$time$Time$init = $elm$core$Task$succeed(
-	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
-var $elm$core$Basics$compare = _Utils_compare;
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Dict$Black = {$: 'Black'};
 var $elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
@@ -5908,6 +5832,7 @@ var $elm$core$Dict$balance = F5(
 			}
 		}
 	});
+var $elm$core$Basics$compare = _Utils_compare;
 var $elm$core$Dict$insertHelp = F3(
 	function (key, value, dict) {
 		if (dict.$ === 'RBEmpty_elm_builtin') {
@@ -5954,6 +5879,214 @@ var $elm$core$Dict$insert = F3(
 		} else {
 			var x = _v0;
 			return x;
+		}
+	});
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$core$Dict$map = F2(
+	function (func, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return $elm$core$Dict$RBEmpty_elm_builtin;
+		} else {
+			var color = dict.a;
+			var key = dict.b;
+			var value = dict.c;
+			var left = dict.d;
+			var right = dict.e;
+			return A5(
+				$elm$core$Dict$RBNode_elm_builtin,
+				color,
+				key,
+				A2(func, key, value),
+				A2($elm$core$Dict$map, func, left),
+				A2($elm$core$Dict$map, func, right));
+		}
+	});
+var $elm$core$Basics$round = _Basics_round;
+var $author$project$Main$maxPotential = function (_v0) {
+	var width = _v0.width;
+	var height = _v0.height;
+	return ($elm$core$Basics$round(width + height) / 4) | 0;
+};
+var $elm$core$Basics$pow = _Basics_pow;
+var $avh4$elm_color$Color$toRgba = function (_v0) {
+	var r = _v0.a;
+	var g = _v0.b;
+	var b = _v0.c;
+	var a = _v0.d;
+	return {alpha: a, blue: b, green: g, red: r};
+};
+var $noahzgordon$elm_color_extra$Color$Convert$colorToXyz = function (cl) {
+	var c = function (ch) {
+		var ch_ = (ch > 4.045e-2) ? A2($elm$core$Basics$pow, (ch + 5.5e-2) / 1.055, 2.4) : (ch / 12.92);
+		return ch_ * 100;
+	};
+	var _v0 = $avh4$elm_color$Color$toRgba(cl);
+	var blue = _v0.blue;
+	var green = _v0.green;
+	var red = _v0.red;
+	var b = c(blue);
+	var g = c(green);
+	var r = c(red);
+	return {x: ((r * 0.4124) + (g * 0.3576)) + (b * 0.1805), y: ((r * 0.2126) + (g * 0.7152)) + (b * 7.22e-2), z: ((r * 1.93e-2) + (g * 0.1192)) + (b * 0.9505)};
+};
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $noahzgordon$elm_color_extra$Color$Convert$xyzToLab = function (_v0) {
+	var z = _v0.z;
+	var y = _v0.y;
+	var x = _v0.x;
+	var c = function (ch) {
+		return (ch > 8.856e-3) ? A2($elm$core$Basics$pow, ch, 1 / 3) : ((7.787 * ch) + (16 / 116));
+	};
+	var x_ = c(x / 95.047);
+	var y_ = c(y / 100);
+	var z_ = c(z / 108.883);
+	return {a: 500 * (x_ - y_), b: 200 * (y_ - z_), l: (116 * y_) - 16};
+};
+var $noahzgordon$elm_color_extra$Color$Convert$colorToLab = A2($elm$core$Basics$composeR, $noahzgordon$elm_color_extra$Color$Convert$colorToXyz, $noahzgordon$elm_color_extra$Color$Convert$xyzToLab);
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Basics$isNaN = _Basics_isNaN;
+var $elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
+var $avh4$elm_color$Color$toHsla = function (_v0) {
+	var r = _v0.a;
+	var g = _v0.b;
+	var b = _v0.c;
+	var a = _v0.d;
+	var minColor = A2(
+		$elm$core$Basics$min,
+		r,
+		A2($elm$core$Basics$min, g, b));
+	var maxColor = A2(
+		$elm$core$Basics$max,
+		r,
+		A2($elm$core$Basics$max, g, b));
+	var l = (minColor + maxColor) / 2;
+	var s = _Utils_eq(minColor, maxColor) ? 0 : ((l < 0.5) ? ((maxColor - minColor) / (maxColor + minColor)) : ((maxColor - minColor) / ((2 - maxColor) - minColor)));
+	var h1 = _Utils_eq(maxColor, r) ? ((g - b) / (maxColor - minColor)) : (_Utils_eq(maxColor, g) ? (2 + ((b - r) / (maxColor - minColor))) : (4 + ((r - g) / (maxColor - minColor))));
+	var h2 = h1 * (1 / 6);
+	var h3 = $elm$core$Basics$isNaN(h2) ? 0 : ((h2 < 0) ? (h2 + 1) : h2);
+	return {alpha: a, hue: h3, lightness: l, saturation: s};
+};
+var $author$project$Main$setWhiteAs = function (_v0) {
+	var minValue = _v0.a;
+	var maxValue = _v0.b;
+	return $elm$core$List$filter(
+		function (_v1) {
+			var color = _v1.b;
+			var _v2 = $avh4$elm_color$Color$toHsla(color);
+			var alpha = _v2.alpha;
+			return function (_v3) {
+				var l = _v3.l;
+				return (alpha < 0.5) || ((_Utils_cmp(minValue, l) < 1) && (_Utils_cmp(l, maxValue) < 1));
+			}(
+				$noahzgordon$elm_color_extra$Color$Convert$colorToLab(color));
+		});
+};
+var $author$project$Main$new = function (flag) {
+	var _v0 = _Utils_Tuple2(
+		$elm$core$Basics$round(flag.width / 2),
+		$elm$core$Basics$round(flag.height / 2));
+	var x = _v0.a;
+	var y = _v0.b;
+	return {
+		grid: A2(
+			$elm$core$Dict$map,
+			F2(
+				function (_v1, _v2) {
+					return $elm$core$Maybe$Nothing;
+				}),
+			$elm$core$Dict$fromList(
+				A2(
+					$author$project$Main$setWhiteAs,
+					_Utils_Tuple2(90, 100),
+					flag.image))),
+		height: flag.height,
+		image: $elm$core$Dict$fromList(flag.image),
+		player: _Utils_Tuple2(x, y),
+		potential: $author$project$Main$maxPotential(
+			{height: flag.height, width: flag.width}),
+		running: false,
+		seed: $elm$random$Random$initialSeed(42),
+		width: flag.width
+	};
+};
+var $author$project$Main$init = function (_v0) {
+	return _Utils_Tuple2(
+		$author$project$Main$new(
+			{height: 1, image: _List_Nil, width: 1}),
+		A2($elm$random$Random$generate, $author$project$Main$GotSeed, $elm$random$Random$independentSeed));
+};
+var $author$project$Main$Frame = {$: 'Frame'};
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
 		}
 	});
 var $elm$time$Time$addMySub = F2(
@@ -6228,11 +6361,6 @@ var $elm$core$List$append = F2(
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
 var $avh4$elm_color$Color$RgbaSpace = F4(
 	function (a, b, c, d) {
 		return {$: 'RgbaSpace', a: a, b: b, c: c, d: d};
@@ -7240,7 +7368,6 @@ var $justgook$elm_image$Image$Internal$BitReader$map = F2(
 				}
 			});
 	});
-var $elm$core$Basics$pow = _Basics_pow;
 var $justgook$elm_image$Image$Internal$BitReader$moveFromReserve = F2(
 	function (nbits, state) {
 		var masked = (nbits === 32) ? (state.reserve << state.bitsAvailable) : ((((1 << nbits) - 1) & state.reserve) << state.bitsAvailable);
@@ -10402,10 +10529,6 @@ var $folkertdev$elm_flate$Experimental$ByteArray$get = F2(
 			}
 		}
 	});
-var $elm$core$Basics$min = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
 var $folkertdev$elm_flate$Experimental$ByteArray$copyToBackInternal = F5(
 	function (startIndex, size, array, finalSize, finalBytes) {
 		copyToBackInternal:
@@ -11417,18 +11540,6 @@ var $elm$file$File$Select$file = F2(
 			toMsg,
 			_File_uploadOne(mimes));
 	});
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
 var $elm$core$Debug$log = _Debug_log;
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -11453,10 +11564,6 @@ var $elm$core$List$repeat = F2(
 	function (n, value) {
 		return A3($elm$core$List$repeatHelp, _List_Nil, n, value);
 	});
-var $JohnBugner$elm_bag$Bag$Bag = function (a) {
-	return {$: 'Bag', a: a};
-};
-var $JohnBugner$elm_bag$Bag$empty = $JohnBugner$elm_bag$Bag$Bag($elm$core$Dict$empty);
 var $elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
 		var _v0 = f(mx);
@@ -11475,63 +11582,47 @@ var $elm$core$List$filterMap = F2(
 			_List_Nil,
 			xs);
 	});
-var $JohnBugner$elm_bag$Bag$dict = function (_v0) {
-	var d = _v0.a;
-	return d;
-};
-var $JohnBugner$elm_bag$Bag$count = F2(
-	function (v, b) {
-		return A2(
-			$elm$core$Maybe$withDefault,
-			0,
-			A2(
-				$elm$core$Dict$get,
-				v,
-				$JohnBugner$elm_bag$Bag$dict(b)));
-	});
-var $JohnBugner$elm_bag$Bag$insert = F3(
-	function (n, v, b) {
-		var n_ = A2($JohnBugner$elm_bag$Bag$count, v, b) + n;
-		return (n_ > 0) ? $JohnBugner$elm_bag$Bag$Bag(
-			A3(
-				$elm$core$Dict$insert,
-				v,
-				n_,
-				$JohnBugner$elm_bag$Bag$dict(b))) : $JohnBugner$elm_bag$Bag$Bag(
-			A2(
-				$elm$core$Dict$remove,
-				v,
-				$JohnBugner$elm_bag$Bag$dict(b)));
-	});
-var $JohnBugner$elm_bag$Bag$toList = function (b) {
-	return $elm$core$Dict$toList(
-		$JohnBugner$elm_bag$Bag$dict(b));
-};
 var $author$project$Main$resizeBy = F2(
 	function (factor, list) {
 		return A2(
 			$elm$core$List$filterMap,
-			function (_v1) {
-				var pos = _v1.a;
-				var v = _v1.b;
+			function (_v2) {
+				var pos = _v2.a;
+				var v = _v2.b;
 				return (_Utils_cmp(
-					v,
-					$elm$core$Basics$round(((1 / (factor * factor)) * 4) / 8)) > 0) ? $elm$core$Maybe$Just(pos) : $elm$core$Maybe$Nothing;
+					v.value,
+					$elm$core$Basics$round(((1 / (factor * factor)) * 4) / 8)) > 0) ? $elm$core$Maybe$Just(
+					_Utils_Tuple2(pos, v.color)) : $elm$core$Maybe$Nothing;
 			},
-			$JohnBugner$elm_bag$Bag$toList(
+			$elm$core$Dict$toList(
 				A3(
 					$elm$core$List$foldl,
 					function (_v0) {
-						var x = _v0.a;
-						var y = _v0.b;
+						var _v1 = _v0.a;
+						var x = _v1.a;
+						var y = _v1.b;
+						var color = _v0.b;
 						return A2(
-							$JohnBugner$elm_bag$Bag$insert,
-							1,
+							$elm$core$Dict$update,
 							_Utils_Tuple2(
 								$elm$core$Basics$round(x * factor),
-								$elm$core$Basics$round(y * factor)));
+								$elm$core$Basics$round(y * factor)),
+							function (maybe) {
+								return $elm$core$Maybe$Just(
+									A2(
+										$elm$core$Maybe$withDefault,
+										{color: color, value: 1},
+										A2(
+											$elm$core$Maybe$map,
+											function (v) {
+												return _Utils_update(
+													v,
+													{value: v.value + 1});
+											},
+											maybe)));
+							});
 					},
-					$JohnBugner$elm_bag$Bag$empty,
+					$elm$core$Dict$empty,
 					list)));
 	});
 var $author$project$Main$size = 150;
@@ -11539,43 +11630,6 @@ var $author$project$Main$stepSize = function (_v0) {
 	var width = _v0.width;
 	var height = _v0.height;
 	return 1 + $elm$core$Basics$round((width * height) / 1000);
-};
-var $elm$core$Basics$isNaN = _Basics_isNaN;
-var $avh4$elm_color$Color$toHsla = function (_v0) {
-	var r = _v0.a;
-	var g = _v0.b;
-	var b = _v0.c;
-	var a = _v0.d;
-	var minColor = A2(
-		$elm$core$Basics$min,
-		r,
-		A2($elm$core$Basics$min, g, b));
-	var maxColor = A2(
-		$elm$core$Basics$max,
-		r,
-		A2($elm$core$Basics$max, g, b));
-	var l = (minColor + maxColor) / 2;
-	var s = _Utils_eq(minColor, maxColor) ? 0 : ((l < 0.5) ? ((maxColor - minColor) / (maxColor + minColor)) : ((maxColor - minColor) / ((2 - maxColor) - minColor)));
-	var h1 = _Utils_eq(maxColor, r) ? ((g - b) / (maxColor - minColor)) : (_Utils_eq(maxColor, g) ? (2 + ((b - r) / (maxColor - minColor))) : (4 + ((r - g) / (maxColor - minColor))));
-	var h2 = h1 * (1 / 6);
-	var h3 = $elm$core$Basics$isNaN(h2) ? 0 : ((h2 < 0) ? (h2 + 1) : h2);
-	return {alpha: a, hue: h3, lightness: l, saturation: s};
-};
-var $author$project$Main$toBinary = function (_v0) {
-	var minValue = _v0.a;
-	var maxValue = _v0.b;
-	return $elm$core$List$filterMap(
-		function (_v1) {
-			var _v2 = _v1.a;
-			var x = _v2.a;
-			var y = _v2.b;
-			var color = _v1.b;
-			return function (value) {
-				return ((_Utils_cmp(minValue, value) < 1) && (_Utils_cmp(value, maxValue) < 1)) ? $elm$core$Maybe$Just(
-					_Utils_Tuple2(x, y)) : $elm$core$Maybe$Nothing;
-			}(
-				$avh4$elm_color$Color$toHsla(color).lightness);
-		});
 };
 var $elm$file$File$toBytes = _File_toBytes;
 var $author$project$Main$add = F2(
@@ -11586,10 +11640,7 @@ var $author$project$Main$add = F2(
 		var y2 = _v1.b;
 		return _Utils_Tuple2(x1 + x2, y1 + y2);
 	});
-var $author$project$Main$newCell = F2(
-	function (from, potential) {
-		return {from: from, potential: potential, to: _List_Nil};
-	});
+var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var $author$project$Main$applyMove = F2(
 	function (_v0, model) {
 		var move = _v0.a;
@@ -11603,7 +11654,15 @@ var $author$project$Main$applyMove = F2(
 					$elm$core$Dict$insert,
 					newPlayer,
 					$elm$core$Maybe$Just(
-						A2($author$project$Main$newCell, model.player, newPotential)),
+						{
+							color: A2(
+								$elm$core$Maybe$withDefault,
+								$avh4$elm_color$Color$black,
+								A2($elm$core$Dict$get, newPlayer, model.image)),
+							from: model.player,
+							potential: newPotential,
+							to: _List_Nil
+						}),
 					A3(
 						$elm$core$Dict$update,
 						model.player,
@@ -11755,17 +11814,6 @@ var $author$project$Main$areLinked = F3(
 					_Utils_Tuple2(p1, p2),
 					_Utils_Tuple2(p2, p1)
 				]));
-	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
 	});
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$validMoves = function (model) {
@@ -11991,25 +12039,16 @@ var $author$project$Main$update = F2(
 					var image = _v2.a;
 					var dim = $justgook$elm_image$Image$dimensions(image);
 					var factor = $author$project$Main$size / A2($elm$core$Basics$max, dim.width, dim.height);
-					var grid = $elm$core$Dict$fromList(
-						A2(
-							$elm$core$List$map,
-							function (pos) {
-								return _Utils_Tuple2(pos, $elm$core$Maybe$Nothing);
-							},
-							A2(
-								$author$project$Main$resizeBy,
-								factor,
-								A2(
-									$author$project$Main$toBinary,
-									_Utils_Tuple2(0.9, 1),
-									$author$project$Main$convertImage(image)))));
+					var img = A2(
+						$author$project$Main$resizeBy,
+						factor,
+						$author$project$Main$convertImage(image));
 					var _v3 = _Utils_Tuple2(
 						$elm$core$Basics$round(dim.width * factor),
 						$elm$core$Basics$round(dim.height * factor));
 					var width = _v3.a;
 					var height = _v3.b;
-					return _Utils_eq(grid, $elm$core$Dict$empty) ? A2(
+					return _Utils_eq(img, _List_Nil) ? A2(
 						$elm$core$Debug$log,
 						'no transparency',
 						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none)) : _Utils_Tuple2(
@@ -12029,7 +12068,7 @@ var $author$project$Main$update = F2(
 								});
 						}(
 							$author$project$Main$new(
-								{grid: grid, height: height, width: width})),
+								{height: height, image: img, width: width})),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					return A2(
@@ -12040,6 +12079,67 @@ var $author$project$Main$update = F2(
 		}
 	});
 var $author$project$Main$Select = {$: 'Select'};
+var $noahzgordon$elm_color_extra$Color$Convert$labToXyz = function (_v0) {
+	var b = _v0.b;
+	var a = _v0.a;
+	var l = _v0.l;
+	var y = (l + 16) / 116;
+	var c = function (ch) {
+		var ch_ = (ch * ch) * ch;
+		return (ch_ > 8.856e-3) ? ch_ : ((ch - (16 / 116)) / 7.787);
+	};
+	return {
+		x: c(y + (a / 500)) * 95.047,
+		y: c(y) * 100,
+		z: c(y - (b / 200)) * 108.883
+	};
+};
+var $elm$core$Basics$clamp = F3(
+	function (low, high, number) {
+		return (_Utils_cmp(number, low) < 0) ? low : ((_Utils_cmp(number, high) > 0) ? high : number);
+	});
+var $avh4$elm_color$Color$rgb = F3(
+	function (r, g, b) {
+		return A4($avh4$elm_color$Color$RgbaSpace, r, g, b, 1.0);
+	});
+var $noahzgordon$elm_color_extra$Color$Convert$xyzToColor = function (_v0) {
+	var z = _v0.z;
+	var y = _v0.y;
+	var x = _v0.x;
+	var z_ = z / 100;
+	var y_ = y / 100;
+	var x_ = x / 100;
+	var r = ((x_ * 3.2404542) + (y_ * (-1.5371385))) + (z_ * (-0.4986));
+	var g = ((x_ * (-0.969266)) + (y_ * 1.8760108)) + (z_ * 4.1556e-2);
+	var c = function (ch) {
+		var ch_ = (ch > 3.1308e-3) ? ((1.055 * A2($elm$core$Basics$pow, ch, 1 / 2.4)) - 5.5e-2) : (12.92 * ch);
+		return A3($elm$core$Basics$clamp, 0, 1, ch_);
+	};
+	var b = ((x_ * 5.56434e-2) + (y_ * (-0.2040259))) + (z_ * 1.0572252);
+	return A3(
+		$avh4$elm_color$Color$rgb,
+		c(r),
+		c(g),
+		c(b));
+};
+var $noahzgordon$elm_color_extra$Color$Convert$labToColor = A2($elm$core$Basics$composeR, $noahzgordon$elm_color_extra$Color$Convert$labToXyz, $noahzgordon$elm_color_extra$Color$Convert$xyzToColor);
+var $author$project$Main$adjustColor = F3(
+	function (_v0, potential, color) {
+		var width = _v0.width;
+		var height = _v0.height;
+		var muliplier = 1 - (potential / $author$project$Main$maxPotential(
+			{height: height, width: width}));
+		var _v1 = $noahzgordon$elm_color_extra$Color$Convert$colorToLab(color);
+		var l = _v1.l;
+		var a = _v1.a;
+		var b = _v1.b;
+		return $noahzgordon$elm_color_extra$Color$Convert$labToColor(
+			{
+				a: a,
+				b: b,
+				l: A2($elm$core$Basics$max, 0, (l * 90) / 100)
+			});
+	});
 var $joakin$elm_canvas$Canvas$Internal$Canvas$Circle = F2(
 	function (a, b) {
 		return {$: 'Circle', a: a, b: b};
@@ -12188,41 +12288,12 @@ var $joakin$elm_canvas$Canvas$shapes = F2(
 					drawable: $joakin$elm_canvas$Canvas$Internal$Canvas$DrawableShapes(ss)
 				}));
 	});
-var $avh4$elm_color$Color$hsla = F4(
-	function (hue, sat, light, alpha) {
-		var _v0 = _Utils_Tuple3(hue, sat, light);
-		var h = _v0.a;
-		var s = _v0.b;
-		var l = _v0.c;
-		var m2 = (l <= 0.5) ? (l * (s + 1)) : ((l + s) - (l * s));
-		var m1 = (l * 2) - m2;
-		var hueToRgb = function (h__) {
-			var h_ = (h__ < 0) ? (h__ + 1) : ((h__ > 1) ? (h__ - 1) : h__);
-			return ((h_ * 6) < 1) ? (m1 + (((m2 - m1) * h_) * 6)) : (((h_ * 2) < 1) ? m2 : (((h_ * 3) < 2) ? (m1 + (((m2 - m1) * ((2 / 3) - h_)) * 6)) : m1));
-		};
-		var b = hueToRgb(h - (1 / 3));
-		var g = hueToRgb(h);
-		var r = hueToRgb(h + (1 / 3));
-		return A4($avh4$elm_color$Color$RgbaSpace, r, g, b, alpha);
-	});
-var $avh4$elm_color$Color$hsl = F3(
-	function (h, s, l) {
-		return A4($avh4$elm_color$Color$hsla, h, s, l, 1.0);
-	});
-var $author$project$Main$toColor = F2(
-	function (_v0, potential) {
-		var width = _v0.width;
-		var height = _v0.height;
-		var muliplier = 1 - (potential / $author$project$Main$maxPotential(
-			{height: height, width: width}));
-		var l = (muliplier / 8) + (1 / 8);
-		return A3($avh4$elm_color$Color$hsl, 0, 0, l);
-	});
 var $author$project$Main$bigCircle = F2(
 	function (_v0, _v1) {
 		var width = _v0.width;
 		var height = _v0.height;
 		var potential = _v0.potential;
+		var color = _v0.color;
 		var x = _v1.a;
 		var y = _v1.b;
 		return A2(
@@ -12230,10 +12301,11 @@ var $author$project$Main$bigCircle = F2(
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$fill(
-					A2(
-						$author$project$Main$toColor,
+					A3(
+						$author$project$Main$adjustColor,
 						{height: height, width: width},
-						potential))
+						potential,
+						color))
 				]),
 			$elm$core$List$singleton(
 				A2(
@@ -12612,7 +12684,6 @@ var $joakin$elm_canvas$Canvas$renderShape = F2(
 							cmds)));
 		}
 	});
-var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$NonZero = {$: 'NonZero'};
 var $joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fillRuleToString = function (fillRule) {
 	if (fillRule.$ === 'NonZero') {
@@ -13038,6 +13109,7 @@ var $author$project$Main$circle = F2(
 		var width = _v0.width;
 		var height = _v0.height;
 		var potential = _v0.potential;
+		var color = _v0.color;
 		var x = _v1.a;
 		var y = _v1.b;
 		return A2(
@@ -13045,10 +13117,11 @@ var $author$project$Main$circle = F2(
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$fill(
-					A2(
-						$author$project$Main$toColor,
+					A3(
+						$author$project$Main$adjustColor,
 						{height: height, width: width},
-						potential))
+						potential,
+						color))
 				]),
 			$elm$core$List$singleton(
 				A2(
@@ -13114,6 +13187,7 @@ var $author$project$Main$line = F3(
 		var width = _v0.width;
 		var height = _v0.height;
 		var potential = _v0.potential;
+		var color = _v0.color;
 		var x1 = _v1.a;
 		var y1 = _v1.b;
 		var x2 = _v2.a;
@@ -13123,10 +13197,11 @@ var $author$project$Main$line = F3(
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$stroke(
-					A2(
-						$author$project$Main$toColor,
+					A3(
+						$author$project$Main$adjustColor,
 						{height: height, width: width},
-						potential)),
+						potential,
+						color)),
 					$joakin$elm_canvas$Canvas$Settings$Line$lineWidth($author$project$Main$lineWidth),
 					$joakin$elm_canvas$Canvas$Settings$Line$lineCap($joakin$elm_canvas$Canvas$Settings$Line$RoundCap)
 				]),
@@ -13150,18 +13225,18 @@ var $author$project$Main$viewCell = F2(
 			$elm$core$List$cons,
 			A3(
 				$author$project$Main$line,
-				{height: height, potential: cell.potential, width: width},
+				{color: cell.color, height: height, potential: cell.potential, width: width},
 				pos,
 				cell.from),
 			_Utils_eq(cell.to, _List_Nil) ? $elm$core$List$singleton(
 				A2(
 					$author$project$Main$circle,
-					{height: height, potential: cell.potential, width: width},
+					{color: cell.color, height: height, potential: cell.potential, width: width},
 					pos)) : A2(
 				$elm$core$List$map,
 				A2(
 					$author$project$Main$line,
-					{height: height, potential: cell.potential, width: width},
+					{color: cell.color, height: height, potential: cell.potential, width: width},
 					pos),
 				cell.to));
 	});
@@ -13189,7 +13264,7 @@ var $author$project$Main$view = function (model) {
 							{height: model.height, width: model.width}),
 							A2(
 							$author$project$Main$bigCircle,
-							{height: model.height, potential: model.potential, width: model.width},
+							{color: $avh4$elm_color$Color$black, height: model.height, potential: model.potential, width: model.width},
 							model.player)
 						]),
 					A2(

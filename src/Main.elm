@@ -9,6 +9,7 @@ import Canvas.Settings as Settings exposing (fill)
 import Canvas.Settings.Advanced exposing (rotate, transform, translate)
 import Canvas.Settings.Line as Line
 import Color exposing (Color)
+import Color.Convert
 import Dict exposing (Dict)
 import File exposing (File)
 import File.Select as Select
@@ -55,12 +56,8 @@ type alias Cell =
     { from : ( Int, Int )
     , to : List ( Int, Int )
     , potential : Int
+    , color : Color
     }
-
-
-newCell : ( Int, Int ) -> Int -> Cell
-newCell from potential =
-    { from = from, to = [], potential = potential }
 
 
 type alias Model =
@@ -71,6 +68,7 @@ type alias Model =
     , potential : Int
     , width : Float
     , height : Float
+    , image : Dict ( Int, Int ) Color
     }
 
 
@@ -84,24 +82,29 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init () =
-    ( new { grid = Dict.empty, width = 1, height = 1 }
+    ( new { image = [], width = 1, height = 1 }
     , Random.independentSeed |> Random.generate GotSeed
     )
 
 
-new : { grid : Dict ( Int, Int ) (Maybe Cell), width : Float, height : Float } -> Model
+new : { image : List ( ( Int, Int ), Color ), width : Float, height : Float } -> Model
 new flag =
     let
         ( x, y ) =
             ( round <| flag.width / 2, round <| flag.height / 2 )
     in
-    { grid = flag.grid
+    { grid =
+        flag.image
+            |> setWhiteAs ( 90, 100 )
+            |> Dict.fromList
+            |> Dict.map (\_ _ -> Nothing)
     , player = ( x, y )
     , seed = Random.initialSeed 42
     , running = False
     , potential = maxPotential { width = flag.width, height = flag.height }
     , width = flag.width
     , height = flag.height
+    , image = flag.image |> Dict.fromList
     }
 
 
@@ -221,7 +224,17 @@ applyMove ( move, seed ) model =
                             )
                         )
                     )
-                |> Dict.insert newPlayer (newCell model.player newPotential |> Just)
+                |> Dict.insert newPlayer
+                    ({ from = model.player
+                     , to = []
+                     , potential = newPotential
+                     , color =
+                        model.image
+                            |> Dict.get newPlayer
+                            |> Maybe.withDefault Color.black
+                     }
+                        |> Just
+                    )
     }
 
 
@@ -301,42 +314,48 @@ convertImage image =
         |> List.indexedMap
             (\y list ->
                 list
-                    |> List.indexedMap
-                        (\x color ->
-                            ( ( x, y ), color )
-                        )
+                    |> List.indexedMap (\x color -> ( ( x, y ), color ))
             )
         |> List.concat
 
 
-toBinary : ( Float, Float ) -> List ( ( Int, Int ), Color ) -> List ( Int, Int )
-toBinary ( minValue, maxValue ) =
-    List.filterMap
-        (\( ( x, y ), color ) ->
+setWhiteAs : ( Float, Float ) -> List ( a, Color ) -> List ( a, Color )
+setWhiteAs ( minValue, maxValue ) =
+    List.filter
+        (\( _, color ) ->
+            let
+                { alpha } =
+                    color
+                        |> Color.toHsla
+            in
             color
-                |> Color.toHsla
-                |> .lightness
-                |> (\value ->
-                        if minValue <= value && value <= maxValue then
-                            Just ( x, y )
-
-                        else
-                            Nothing
+                |> Color.Convert.colorToLab
+                |> (\{ l } ->
+                        (alpha < 0.5)
+                            || ((minValue <= l) && (l <= maxValue))
                    )
         )
 
 
-resizeBy : Float -> List ( Int, Int ) -> List ( Int, Int )
+resizeBy : Float -> List ( ( Int, Int ), Color ) -> List ( ( Int, Int ), Color )
 resizeBy factor list =
     list
         |> List.foldl
-            (\( x, y ) -> Bag.insert 1 ( round (toFloat x * factor), round (toFloat y * factor) ))
-            Bag.empty
-        |> Bag.toList
+            (\( ( x, y ), color ) ->
+                Dict.update ( round (toFloat x * factor), round (toFloat y * factor) )
+                    (\maybe ->
+                        maybe
+                            |> Maybe.map (\v -> { v | value = v.value + 1 })
+                            |> Maybe.withDefault { value = 1, color = color }
+                            |> Just
+                    )
+            )
+            Dict.empty
+        |> Dict.toList
         |> List.filterMap
             (\( pos, v ) ->
-                if v > round ((1 / (factor * factor)) * 4 / 8) then
-                    Just pos
+                if v.value > round ((1 / (factor * factor)) * 4 / 8) then
+                    Just ( pos, v.color )
 
                 else
                     Nothing
@@ -377,20 +396,17 @@ update msg model =
                             , round (toFloat dim.height * factor)
                             )
 
-                        grid =
+                        img =
                             image
                                 |> convertImage
-                                |> toBinary ( 0.9, 1 )
                                 |> resizeBy factor
-                                |> List.map (\pos -> ( pos, Nothing ))
-                                |> Dict.fromList
                     in
-                    if grid == Dict.empty then
+                    if img == [] then
                         ( model, Cmd.none ) |> Debug.log "no transparency"
 
                     else
                         ( new
-                            { grid = grid
+                            { image = img
                             , width = toFloat width
                             , height = toFloat height
                             }
@@ -414,25 +430,6 @@ update msg model =
                     ( model, Cmd.none ) |> Debug.log "no image"
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    if model.running then
-        Time.every 2 (always Frame)
-
-    else
-        Sub.none
-
-
-main : Program () Model Msg
-main =
-    Browser.element
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = subscriptions
-        }
-
-
 view : Model -> Html Msg
 view model =
     div
@@ -445,7 +442,13 @@ view model =
             []
             --style "border" "10px solid rgba(0,0,0,0.1)" ]
             ([ clearScreen { width = model.width, height = model.height }
-             , bigCircle { width = model.width, height = model.height, potential = model.potential } model.player
+             , bigCircle
+                { width = model.width
+                , height = model.height
+                , potential = model.potential
+                , color = Color.black
+                }
+                model.player
              ]
                 ++ (model.grid
                         |> Dict.toList
@@ -466,41 +469,60 @@ clearScreen { width, height } =
     shapes [ fill Color.white ] [ rect ( 0, 0 ) (width * zoom) (height * zoom) ]
 
 
-toColor : { width : Float, height : Float } -> Int -> Color
-toColor { width, height } potential =
+adjustColor : { width : Float, height : Float } -> Int -> Color -> Color
+adjustColor { width, height } potential color =
     let
+        { l, a, b } =
+            color
+                |> Color.Convert.colorToLab
+
         muliplier =
             1 - toFloat potential / toFloat (maxPotential { width = width, height = height })
-
-        l =
-            muliplier / 8 + 1 / 8
     in
-    Color.hsl 0 0 l
+    { l = max 0 (l * 90 / 100)
+    , a = a
+    , b = b
+    }
+        |> Color.Convert.labToColor
 
 
-line : { width : Float, height : Float, potential : Int } -> ( Int, Int ) -> ( Int, Int ) -> Renderable
-line { width, height, potential } ( x1, y1 ) ( x2, y2 ) =
+
+--Color.hsl hue saturation lightness
+
+
+line : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> ( Int, Int ) -> Renderable
+line { width, height, potential, color } ( x1, y1 ) ( x2, y2 ) =
     Canvas.path ( toFloat x1 * zoom, toFloat y1 * zoom ) [ Canvas.lineTo ( toFloat x2 * zoom, toFloat y2 * zoom ) ]
         |> List.singleton
         |> shapes
-            [ Settings.stroke (toColor { width = width, height = height } potential)
+            [ Settings.stroke (color |> adjustColor { width = width, height = height } potential)
             , Line.lineWidth lineWidth
             , Line.lineCap Line.RoundCap
             ]
 
 
-bigCircle : { width : Float, height : Float, potential : Int } -> ( Int, Int ) -> Renderable
-bigCircle { width, height, potential } ( x, y ) =
+bigCircle : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> Renderable
+bigCircle { width, height, potential, color } ( x, y ) =
     Canvas.circle ( toFloat x * zoom, toFloat y * zoom ) (lineWidth * 2)
         |> List.singleton
-        |> shapes [ Settings.fill (toColor { width = width, height = height } potential) ]
+        |> shapes
+            [ Settings.fill
+                (color
+                    |> adjustColor { width = width, height = height } potential
+                )
+            ]
 
 
-circle : { width : Float, height : Float, potential : Int } -> ( Int, Int ) -> Renderable
-circle { width, height, potential } ( x, y ) =
+circle : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> Renderable
+circle { width, height, potential, color } ( x, y ) =
     Canvas.circle ( toFloat x * zoom, toFloat y * zoom ) (lineWidth * 1.5)
         |> List.singleton
-        |> shapes [ Settings.fill (toColor { width = width, height = height } potential) ]
+        |> shapes
+            [ Settings.fill
+                (color
+                    |> adjustColor { width = width, height = height } potential
+                )
+            ]
 
 
 viewCell : { width : Float, height : Float } -> ( ( Int, Int ), Cell ) -> List Renderable
@@ -510,6 +532,7 @@ viewCell { width, height } ( pos, cell ) =
             { width = width
             , height = height
             , potential = cell.potential
+            , color = cell.color
             }
             pos
     )
@@ -518,6 +541,7 @@ viewCell { width, height } ( pos, cell ) =
                     { width = width
                     , height = height
                     , potential = cell.potential
+                    , color = cell.color
                     }
                     pos
                     |> List.singleton
@@ -529,7 +553,27 @@ viewCell { width, height } ( pos, cell ) =
                             { width = width
                             , height = height
                             , potential = cell.potential
+                            , color = cell.color
                             }
                             pos
                         )
            )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if model.running then
+        Time.every 2 (always Frame)
+
+    else
+        Sub.none
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
