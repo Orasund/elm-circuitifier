@@ -6228,49 +6228,6 @@ var $elm$core$List$append = F2(
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
-var $elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _v0 = f(mx);
-		if (_v0.$ === 'Just') {
-			var x = _v0.a;
-			return A2($elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var $elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var $elm$core$Basics$isNaN = _Basics_isNaN;
-var $elm$core$Basics$min = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
-var $avh4$elm_color$Color$toHsla = function (_v0) {
-	var r = _v0.a;
-	var g = _v0.b;
-	var b = _v0.c;
-	var a = _v0.d;
-	var minColor = A2(
-		$elm$core$Basics$min,
-		r,
-		A2($elm$core$Basics$min, g, b));
-	var maxColor = A2(
-		$elm$core$Basics$max,
-		r,
-		A2($elm$core$Basics$max, g, b));
-	var l = (minColor + maxColor) / 2;
-	var s = _Utils_eq(minColor, maxColor) ? 0 : ((l < 0.5) ? ((maxColor - minColor) / (maxColor + minColor)) : ((maxColor - minColor) / ((2 - maxColor) - minColor)));
-	var h1 = _Utils_eq(maxColor, r) ? ((g - b) / (maxColor - minColor)) : (_Utils_eq(maxColor, g) ? (2 + ((b - r) / (maxColor - minColor))) : (4 + ((r - g) / (maxColor - minColor))));
-	var h2 = h1 * (1 / 6);
-	var h3 = $elm$core$Basics$isNaN(h2) ? 0 : ((h2 < 0) ? (h2 + 1) : h2);
-	return {alpha: a, hue: h3, lightness: l, saturation: s};
-};
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
@@ -6335,32 +6292,24 @@ var $justgook$elm_image$Image$Color$toList2d = A2(
 	$justgook$elm_image$Image$Internal$ImageData$toList2d,
 	$elm$core$List$map(
 		$elm$core$List$map($justgook$elm_image$Image$Color$int32ToColor)));
-var $author$project$Main$convertImage = F2(
-	function (_v0, image) {
-		var minValue = _v0.a;
-		var maxValue = _v0.b;
-		return $elm$core$List$concat(
-			A2(
-				$elm$core$List$indexedMap,
-				F2(
-					function (y, list) {
-						return A2(
-							$elm$core$List$filterMap,
-							$elm$core$Basics$identity,
-							A2(
-								$elm$core$List$indexedMap,
-								F2(
-									function (x, color) {
-										return function (value) {
-											return ((_Utils_cmp(minValue, value) < 1) && (_Utils_cmp(value, maxValue) < 1)) ? $elm$core$Maybe$Just(
-												_Utils_Tuple2(x, y)) : $elm$core$Maybe$Nothing;
-										}(
-											$avh4$elm_color$Color$toHsla(color).lightness);
-									}),
-								list));
-					}),
-				$justgook$elm_image$Image$Color$toList2d(image)));
-	});
+var $author$project$Main$convertImage = function (image) {
+	return $elm$core$List$concat(
+		A2(
+			$elm$core$List$indexedMap,
+			F2(
+				function (y, list) {
+					return A2(
+						$elm$core$List$indexedMap,
+						F2(
+							function (x, color) {
+								return _Utils_Tuple2(
+									_Utils_Tuple2(x, y),
+									color);
+							}),
+						list);
+				}),
+			$justgook$elm_image$Image$Color$toList2d(image)));
+};
 var $elm$bytes$Bytes$Encode$getWidth = function (builder) {
 	switch (builder.$) {
 		case 'I8':
@@ -10453,6 +10402,10 @@ var $folkertdev$elm_flate$Experimental$ByteArray$get = F2(
 			}
 		}
 	});
+var $elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
 var $folkertdev$elm_flate$Experimental$ByteArray$copyToBackInternal = F5(
 	function (startIndex, size, array, finalSize, finalBytes) {
 		copyToBackInternal:
@@ -11504,6 +11457,24 @@ var $JohnBugner$elm_bag$Bag$Bag = function (a) {
 	return {$: 'Bag', a: a};
 };
 var $JohnBugner$elm_bag$Bag$empty = $JohnBugner$elm_bag$Bag$Bag($elm$core$Dict$empty);
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
 var $JohnBugner$elm_bag$Bag$dict = function (_v0) {
 	var d = _v0.a;
 	return d;
@@ -11568,6 +11539,43 @@ var $author$project$Main$stepSize = function (_v0) {
 	var width = _v0.width;
 	var height = _v0.height;
 	return 1 + $elm$core$Basics$round((width * height) / 1000);
+};
+var $elm$core$Basics$isNaN = _Basics_isNaN;
+var $avh4$elm_color$Color$toHsla = function (_v0) {
+	var r = _v0.a;
+	var g = _v0.b;
+	var b = _v0.c;
+	var a = _v0.d;
+	var minColor = A2(
+		$elm$core$Basics$min,
+		r,
+		A2($elm$core$Basics$min, g, b));
+	var maxColor = A2(
+		$elm$core$Basics$max,
+		r,
+		A2($elm$core$Basics$max, g, b));
+	var l = (minColor + maxColor) / 2;
+	var s = _Utils_eq(minColor, maxColor) ? 0 : ((l < 0.5) ? ((maxColor - minColor) / (maxColor + minColor)) : ((maxColor - minColor) / ((2 - maxColor) - minColor)));
+	var h1 = _Utils_eq(maxColor, r) ? ((g - b) / (maxColor - minColor)) : (_Utils_eq(maxColor, g) ? (2 + ((b - r) / (maxColor - minColor))) : (4 + ((r - g) / (maxColor - minColor))));
+	var h2 = h1 * (1 / 6);
+	var h3 = $elm$core$Basics$isNaN(h2) ? 0 : ((h2 < 0) ? (h2 + 1) : h2);
+	return {alpha: a, hue: h3, lightness: l, saturation: s};
+};
+var $author$project$Main$toBinary = function (_v0) {
+	var minValue = _v0.a;
+	var maxValue = _v0.b;
+	return $elm$core$List$filterMap(
+		function (_v1) {
+			var _v2 = _v1.a;
+			var x = _v2.a;
+			var y = _v2.b;
+			var color = _v1.b;
+			return function (value) {
+				return ((_Utils_cmp(minValue, value) < 1) && (_Utils_cmp(value, maxValue) < 1)) ? $elm$core$Maybe$Just(
+					_Utils_Tuple2(x, y)) : $elm$core$Maybe$Nothing;
+			}(
+				$avh4$elm_color$Color$toHsla(color).lightness);
+		});
 };
 var $elm$file$File$toBytes = _File_toBytes;
 var $author$project$Main$add = F2(
@@ -11641,7 +11649,11 @@ var $elm$core$Dict$member = F2(
 		}
 	});
 var $author$project$Main$moveBack = function (model) {
-	var newPotential = model.potential + 1;
+	var newPotential = A2(
+		$elm$core$Basics$min,
+		model.potential + 1,
+		$author$project$Main$maxPotential(
+			{height: model.height, width: model.width}));
 	var _v0 = A2($elm$core$Dict$get, model.player, model.grid);
 	if ((_v0.$ === 'Just') && (_v0.a.$ === 'Just')) {
 		var from = _v0.a.a.from;
@@ -11693,76 +11705,6 @@ var $author$project$Main$moveBack = function (model) {
 			});
 	}
 };
-var $elm$random$Random$addOne = function (value) {
-	return _Utils_Tuple2(1, value);
-};
-var $elm$random$Random$float = F2(
-	function (a, b) {
-		return $elm$random$Random$Generator(
-			function (seed0) {
-				var seed1 = $elm$random$Random$next(seed0);
-				var range = $elm$core$Basics$abs(b - a);
-				var n1 = $elm$random$Random$peel(seed1);
-				var n0 = $elm$random$Random$peel(seed0);
-				var lo = (134217727 & n1) * 1.0;
-				var hi = (67108863 & n0) * 1.0;
-				var val = ((hi * 134217728.0) + lo) / 9007199254740992.0;
-				var scaled = (val * range) + a;
-				return _Utils_Tuple2(
-					scaled,
-					$elm$random$Random$next(seed1));
-			});
-	});
-var $elm$random$Random$getByWeight = F3(
-	function (_v0, others, countdown) {
-		getByWeight:
-		while (true) {
-			var weight = _v0.a;
-			var value = _v0.b;
-			if (!others.b) {
-				return value;
-			} else {
-				var second = others.a;
-				var otherOthers = others.b;
-				if (_Utils_cmp(
-					countdown,
-					$elm$core$Basics$abs(weight)) < 1) {
-					return value;
-				} else {
-					var $temp$_v0 = second,
-						$temp$others = otherOthers,
-						$temp$countdown = countdown - $elm$core$Basics$abs(weight);
-					_v0 = $temp$_v0;
-					others = $temp$others;
-					countdown = $temp$countdown;
-					continue getByWeight;
-				}
-			}
-		}
-	});
-var $elm$core$List$sum = function (numbers) {
-	return A3($elm$core$List$foldl, $elm$core$Basics$add, 0, numbers);
-};
-var $elm$random$Random$weighted = F2(
-	function (first, others) {
-		var normalize = function (_v0) {
-			var weight = _v0.a;
-			return $elm$core$Basics$abs(weight);
-		};
-		var total = normalize(first) + $elm$core$List$sum(
-			A2($elm$core$List$map, normalize, others));
-		return A2(
-			$elm$random$Random$map,
-			A2($elm$random$Random$getByWeight, first, others),
-			A2($elm$random$Random$float, 0, total));
-	});
-var $elm$random$Random$uniform = F2(
-	function (value, valueList) {
-		return A2(
-			$elm$random$Random$weighted,
-			$elm$random$Random$addOne(value),
-			A2($elm$core$List$map, $elm$random$Random$addOne, valueList));
-	});
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -11827,6 +11769,14 @@ var $elm$core$List$filter = F2(
 	});
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$validMoves = function (model) {
+	var vecTo = F2(
+		function (_v2, _v3) {
+			var x1 = _v2.a;
+			var y1 = _v2.b;
+			var x2 = _v3.a;
+			var y2 = _v3.b;
+			return _Utils_Tuple2(x1 - x2, y1 - y2);
+		});
 	var inbounds = F2(
 		function (v, maxV) {
 			return (0 < v) && (_Utils_cmp(
@@ -11851,6 +11801,16 @@ var $author$project$Main$validMoves = function (model) {
 				_Utils_Tuple2(-1, 0),
 				_Utils_Tuple2(0, -1)
 			]));
+	var from = A2(
+		$elm$core$Maybe$withDefault,
+		model.player,
+		A2(
+			$elm$core$Maybe$andThen,
+			$elm$core$Maybe$map(
+				function ($) {
+					return $.from;
+				}),
+			A2($elm$core$Dict$get, model.player, model.grid)));
 	var diagonals = A2(
 		$elm$core$List$filter,
 		function (move) {
@@ -11862,7 +11822,17 @@ var $author$project$Main$validMoves = function (model) {
 			return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && ((!A2(
 				$elm$core$Dict$member,
 				A2($author$project$Main$add, model.player, move),
-				model.grid)) && (!A3(
+				model.grid)) && ((!_Utils_eq(
+				A2(
+					$author$project$Main$add,
+					model.player,
+					_Utils_Tuple2(relX, 0)),
+				from)) && ((!_Utils_eq(
+				A2(
+					$author$project$Main$add,
+					model.player,
+					_Utils_Tuple2(0, relY)),
+				from)) && (!A3(
 				$author$project$Main$areLinked,
 				A2(
 					$author$project$Main$add,
@@ -11872,7 +11842,7 @@ var $author$project$Main$validMoves = function (model) {
 					$author$project$Main$add,
 					model.player,
 					_Utils_Tuple2(0, relY)),
-				model))));
+				model))))));
 		},
 		_List_fromArray(
 			[
@@ -11881,8 +11851,77 @@ var $author$project$Main$validMoves = function (model) {
 				_Utils_Tuple2(-1, -1),
 				_Utils_Tuple2(1, -1)
 			]));
-	return _Utils_ap(straights, diagonals);
+	return A2(
+		$elm$core$List$map,
+		function (pos) {
+			return _Utils_Tuple2(
+				_Utils_eq(
+					pos,
+					A2(vecTo, model.player, from)) ? 2 : 1,
+				pos);
+		},
+		_Utils_ap(straights, diagonals));
 };
+var $elm$random$Random$float = F2(
+	function (a, b) {
+		return $elm$random$Random$Generator(
+			function (seed0) {
+				var seed1 = $elm$random$Random$next(seed0);
+				var range = $elm$core$Basics$abs(b - a);
+				var n1 = $elm$random$Random$peel(seed1);
+				var n0 = $elm$random$Random$peel(seed0);
+				var lo = (134217727 & n1) * 1.0;
+				var hi = (67108863 & n0) * 1.0;
+				var val = ((hi * 134217728.0) + lo) / 9007199254740992.0;
+				var scaled = (val * range) + a;
+				return _Utils_Tuple2(
+					scaled,
+					$elm$random$Random$next(seed1));
+			});
+	});
+var $elm$random$Random$getByWeight = F3(
+	function (_v0, others, countdown) {
+		getByWeight:
+		while (true) {
+			var weight = _v0.a;
+			var value = _v0.b;
+			if (!others.b) {
+				return value;
+			} else {
+				var second = others.a;
+				var otherOthers = others.b;
+				if (_Utils_cmp(
+					countdown,
+					$elm$core$Basics$abs(weight)) < 1) {
+					return value;
+				} else {
+					var $temp$_v0 = second,
+						$temp$others = otherOthers,
+						$temp$countdown = countdown - $elm$core$Basics$abs(weight);
+					_v0 = $temp$_v0;
+					others = $temp$others;
+					countdown = $temp$countdown;
+					continue getByWeight;
+				}
+			}
+		}
+	});
+var $elm$core$List$sum = function (numbers) {
+	return A3($elm$core$List$foldl, $elm$core$Basics$add, 0, numbers);
+};
+var $elm$random$Random$weighted = F2(
+	function (first, others) {
+		var normalize = function (_v0) {
+			var weight = _v0.a;
+			return $elm$core$Basics$abs(weight);
+		};
+		var total = normalize(first) + $elm$core$List$sum(
+			A2($elm$core$List$map, normalize, others));
+		return A2(
+			$elm$random$Random$map,
+			A2($elm$random$Random$getByWeight, first, others),
+			A2($elm$random$Random$float, 0, total));
+	});
 var $author$project$Main$updateFrame = function (model) {
 	var moves = $author$project$Main$validMoves(model);
 	if (!moves.b) {
@@ -11894,7 +11933,7 @@ var $author$project$Main$updateFrame = function (model) {
 			$author$project$Main$applyMove,
 			A2(
 				$elm$random$Random$step,
-				A2($elm$random$Random$uniform, head, tail),
+				A2($elm$random$Random$weighted, head, tail),
 				model.seed),
 			model) : $author$project$Main$moveBack(
 			_Utils_update(
@@ -11962,9 +12001,9 @@ var $author$project$Main$update = F2(
 								$author$project$Main$resizeBy,
 								factor,
 								A2(
-									$author$project$Main$convertImage,
+									$author$project$Main$toBinary,
 									_Utils_Tuple2(0.9, 1),
-									image))));
+									$author$project$Main$convertImage(image)))));
 					var _v3 = _Utils_Tuple2(
 						$elm$core$Basics$round(dim.width * factor),
 						$elm$core$Basics$round(dim.height * factor));

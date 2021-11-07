@@ -124,7 +124,7 @@ areLinked p1 p2 model =
             )
 
 
-validMoves : Model -> List ( Int, Int )
+validMoves : Model -> List ( Float, ( Int, Int ) )
 validMoves model =
     let
         inbounds v maxV =
@@ -150,6 +150,12 @@ validMoves model =
                                )
                     )
 
+        from =
+            model.grid
+                |> Dict.get model.player
+                |> Maybe.andThen (Maybe.map .from)
+                |> Maybe.withDefault model.player
+
         diagonals =
             [ ( 1, 1 )
             , ( -1, 1 )
@@ -168,13 +174,28 @@ validMoves model =
                                     |> Dict.member (move |> add model.player)
                                     |> not
                                )
+                            && ((( relX, 0 ) |> add model.player) /= from)
+                            && ((( 0, relY ) |> add model.player) /= from)
                             && (model
                                     |> areLinked (( relX, 0 ) |> add model.player) (( 0, relY ) |> add model.player)
                                     |> not
                                )
                     )
+
+        vecTo ( x1, y1 ) ( x2, y2 ) =
+            ( x1 - x2, y1 - y2 )
     in
-    straights ++ diagonals
+    (straights ++ diagonals)
+        |> List.map
+            (\pos ->
+                ( if from |> vecTo model.player |> (==) pos then
+                    2
+
+                  else
+                    1
+                , pos
+                )
+            )
 
 
 applyMove : ( ( Int, Int ), Seed ) -> Model -> Model
@@ -208,7 +229,8 @@ moveBack : Model -> Model
 moveBack model =
     let
         newPotential =
-            model.potential + 1
+            min (model.potential + 1)
+                (maxPotential { height = model.height, width = model.width })
     in
     case model.grid |> Dict.get model.player of
         Just (Just { from }) ->
@@ -265,15 +287,15 @@ updateFrame model =
                 model
                     |> applyMove
                         (model.seed
-                            |> Random.step (Random.uniform head tail)
+                            |> Random.step (Random.weighted head tail)
                         )
 
             else
                 moveBack { model | potential = maxPotential { width = model.width, height = model.height } // 2 }
 
 
-convertImage : ( Float, Float ) -> Image -> List ( Int, Int )
-convertImage ( minValue, maxValue ) image =
+convertImage : Image -> List ( ( Int, Int ), Color )
+convertImage image =
     image
         |> Image.Color.toList2d
         |> List.indexedMap
@@ -281,20 +303,27 @@ convertImage ( minValue, maxValue ) image =
                 list
                     |> List.indexedMap
                         (\x color ->
-                            color
-                                |> Color.toHsla
-                                |> .lightness
-                                |> (\value ->
-                                        if minValue <= value && value <= maxValue then
-                                            Just ( x, y )
-
-                                        else
-                                            Nothing
-                                   )
+                            ( ( x, y ), color )
                         )
-                    |> List.filterMap identity
             )
         |> List.concat
+
+
+toBinary : ( Float, Float ) -> List ( ( Int, Int ), Color ) -> List ( Int, Int )
+toBinary ( minValue, maxValue ) =
+    List.filterMap
+        (\( ( x, y ), color ) ->
+            color
+                |> Color.toHsla
+                |> .lightness
+                |> (\value ->
+                        if minValue <= value && value <= maxValue then
+                            Just ( x, y )
+
+                        else
+                            Nothing
+                   )
+        )
 
 
 resizeBy : Float -> List ( Int, Int ) -> List ( Int, Int )
@@ -350,7 +379,8 @@ update msg model =
 
                         grid =
                             image
-                                |> convertImage ( 0.9, 1 )
+                                |> convertImage
+                                |> toBinary ( 0.9, 1 )
                                 |> resizeBy factor
                                 |> List.map (\pos -> ( pos, Nothing ))
                                 |> Dict.fromList
