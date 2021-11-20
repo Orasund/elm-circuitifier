@@ -1,12 +1,9 @@
 module Main exposing (circle, main)
 
-import Bag
 import Browser
-import Browser.Events exposing (onAnimationFrameDelta)
 import Bytes exposing (Bytes)
 import Canvas exposing (Renderable, rect, shapes)
 import Canvas.Settings as Settings exposing (fill)
-import Canvas.Settings.Advanced exposing (rotate, transform, translate)
 import Canvas.Settings.Line as Line
 import Color exposing (Color)
 import Color.Convert
@@ -14,18 +11,14 @@ import Dict exposing (Dict)
 import File exposing (File)
 import File.Select as Select
 import Html exposing (Html, div)
-import Html.Attributes as Attributes exposing (style)
+import Html.Attributes exposing (style)
 import Html.Events as Events
-import Http
 import Image exposing (Image)
 import Image.Color
+import Position
 import Random exposing (Seed)
 import Task
 import Time
-
-
-link =
-    "https://image.spreadshirtmedia.net/image-server/v1/mp/compositions/T1303A1MPA3323PT24X0Y0D163964850FS6360/views/1,width=378,height=378,appearanceId=1,backgroundColor=FFFFFF,noPt=true/psychedelic-poster.jpg"
 
 
 maxPotential : { width : Float, height : Float } -> Int
@@ -127,31 +120,25 @@ areLinked p1 p2 model =
             )
 
 
-validMoves : Model -> List ( Float, ( Int, Int ) )
-validMoves model =
+validPositions : Model -> List ( Float, ( Int, Int ) )
+validPositions model =
     let
         inbounds v maxV =
             0 < v && v < round maxV
 
         straights =
-            [ ( 1, 0 )
-            , ( 0, 1 )
-            , ( -1, 0 )
-            , ( 0, -1 )
-            ]
-                |> List.filter
-                    (\move ->
-                        let
-                            ( x, y ) =
-                                move |> add model.player
-                        in
-                        inbounds x model.width
-                            && inbounds y model.height
-                            && (model.grid
-                                    |> Dict.member (move |> add model.player)
-                                    |> not
-                               )
-                    )
+            model.player
+                |> Position.neighbors
+                    { validator =
+                        \( x, y ) ->
+                            inbounds x model.width
+                                && inbounds y model.height
+                                && (model.grid
+                                        |> Dict.member ( x, y )
+                                        |> not
+                                   )
+                    , directions = Position.squareDirections
+                    }
 
         from =
             model.grid
@@ -160,30 +147,31 @@ validMoves model =
                 |> Maybe.withDefault model.player
 
         diagonals =
-            [ ( 1, 1 )
-            , ( -1, 1 )
-            , ( -1, -1 )
-            , ( 1, -1 )
-            ]
-                |> List.filter
-                    (\(( relX, relY ) as move) ->
-                        let
-                            ( x, y ) =
-                                move |> add model.player
-                        in
-                        inbounds x model.width
-                            && inbounds y model.height
-                            && (model.grid
-                                    |> Dict.member (move |> add model.player)
-                                    |> not
-                               )
-                            && ((( relX, 0 ) |> add model.player) /= from)
-                            && ((( 0, relY ) |> add model.player) /= from)
-                            && (model
-                                    |> areLinked (( relX, 0 ) |> add model.player) (( 0, relY ) |> add model.player)
-                                    |> not
-                               )
-                    )
+            model.player
+                |> Position.neighbors
+                    { validator =
+                        \( x, y ) ->
+                            let
+                                sub ( x1, y1 ) ( x2, y2 ) =
+                                    ( x2 - x1, y2 - y1 )
+
+                                (( relX, relY ) as move) =
+                                    ( x, y ) |> sub model.player
+                            in
+                            inbounds x model.width
+                                && inbounds y model.height
+                                && (model.grid
+                                        |> Dict.member (move |> add model.player)
+                                        |> not
+                                   )
+                                && ((( relX, 0 ) |> add model.player) /= from)
+                                && ((( 0, relY ) |> add model.player) /= from)
+                                && (model
+                                        |> areLinked (( relX, 0 ) |> add model.player) (( 0, relY ) |> add model.player)
+                                        |> not
+                                   )
+                    , directions = Position.diagonalDirections
+                    }
 
         vecTo ( x1, y1 ) ( x2, y2 ) =
             ( x1 - x2, y1 - y2 )
@@ -191,7 +179,7 @@ validMoves model =
     (straights ++ diagonals)
         |> List.map
             (\pos ->
-                ( if from |> vecTo model.player |> (==) pos then
+                ( if from |> vecTo model.player |> (==) (model.player |> vecTo pos) then
                     2
 
                   else
@@ -202,11 +190,8 @@ validMoves model =
 
 
 applyMove : ( ( Int, Int ), Seed ) -> Model -> Model
-applyMove ( move, seed ) model =
+applyMove ( newPlayer, seed ) model =
     let
-        newPlayer =
-            move |> add model.player
-
         newPotential =
             model.potential - 2
     in
@@ -289,7 +274,7 @@ updateFrame model =
     let
         moves =
             model
-                |> validMoves
+                |> validPositions
     in
     case moves of
         [] ->
@@ -476,7 +461,7 @@ adjustColor { width, height } potential color =
             color
                 |> Color.Convert.colorToLab
 
-        muliplier =
+        _ =
             1 - toFloat potential / toFloat (maxPotential { width = width, height = height })
     in
     { l = max 0 (l * 90 / 100)

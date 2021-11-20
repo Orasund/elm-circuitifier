@@ -5932,9 +5932,9 @@ var $noahzgordon$elm_color_extra$Color$Convert$colorToXyz = function (cl) {
 		return ch_ * 100;
 	};
 	var _v0 = $avh4$elm_color$Color$toRgba(cl);
-	var blue = _v0.blue;
-	var green = _v0.green;
 	var red = _v0.red;
+	var green = _v0.green;
+	var blue = _v0.blue;
 	var b = c(blue);
 	var g = c(green);
 	var r = c(red);
@@ -5946,9 +5946,9 @@ var $elm$core$Basics$composeR = F3(
 			f(x));
 	});
 var $noahzgordon$elm_color_extra$Color$Convert$xyzToLab = function (_v0) {
-	var z = _v0.z;
-	var y = _v0.y;
 	var x = _v0.x;
+	var y = _v0.y;
+	var z = _v0.z;
 	var c = function (ch) {
 		return (ch > 8.856e-3) ? A2($elm$core$Basics$pow, ch, 1 / 3) : ((7.787 * ch) + (16 / 116));
 	};
@@ -11632,21 +11632,12 @@ var $author$project$Main$stepSize = function (_v0) {
 	return 1 + $elm$core$Basics$round((width * height) / 1000);
 };
 var $elm$file$File$toBytes = _File_toBytes;
-var $author$project$Main$add = F2(
-	function (_v0, _v1) {
-		var x1 = _v0.a;
-		var y1 = _v0.b;
-		var x2 = _v1.a;
-		var y2 = _v1.b;
-		return _Utils_Tuple2(x1 + x2, y1 + y2);
-	});
 var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var $author$project$Main$applyMove = F2(
 	function (_v0, model) {
-		var move = _v0.a;
+		var newPlayer = _v0.a;
 		var seed = _v0.b;
 		var newPotential = model.potential - 2;
-		var newPlayer = A2($author$project$Main$add, model.player, move);
 		return _Utils_update(
 			model,
 			{
@@ -11764,6 +11755,14 @@ var $author$project$Main$moveBack = function (model) {
 			});
 	}
 };
+var $author$project$Main$add = F2(
+	function (_v0, _v1) {
+		var x1 = _v0.a;
+		var y1 = _v0.b;
+		var x2 = _v1.a;
+		var y2 = _v1.b;
+		return _Utils_Tuple2(x1 + x2, y1 + y2);
+	});
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -11815,14 +11814,70 @@ var $author$project$Main$areLinked = F3(
 					_Utils_Tuple2(p2, p1)
 				]));
 	});
+var $author$project$Position$diagonalDirections = _List_fromArray(
+	[
+		function (_v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(x + 1, y + 1);
+	},
+		function (_v1) {
+		var x = _v1.a;
+		var y = _v1.b;
+		return _Utils_Tuple2(x - 1, y - 1);
+	},
+		function (_v2) {
+		var x = _v2.a;
+		var y = _v2.b;
+		return _Utils_Tuple2(x - 1, y + 1);
+	},
+		function (_v3) {
+		var x = _v3.a;
+		var y = _v3.b;
+		return _Utils_Tuple2(x + 1, y - 1);
+	}
+	]);
+var $author$project$Position$neighbors = F2(
+	function (args, pos) {
+		return A2(
+			$elm$core$List$filterMap,
+			function (f) {
+				var newPos = f(pos);
+				return args.validator(newPos) ? $elm$core$Maybe$Just(newPos) : $elm$core$Maybe$Nothing;
+			},
+			args.directions);
+	});
 var $elm$core$Basics$not = _Basics_not;
-var $author$project$Main$validMoves = function (model) {
+var $author$project$Position$squareDirections = _List_fromArray(
+	[
+		function (_v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(x + 1, y);
+	},
+		function (_v1) {
+		var x = _v1.a;
+		var y = _v1.b;
+		return _Utils_Tuple2(x - 1, y);
+	},
+		function (_v2) {
+		var x = _v2.a;
+		var y = _v2.b;
+		return _Utils_Tuple2(x, y + 1);
+	},
+		function (_v3) {
+		var x = _v3.a;
+		var y = _v3.b;
+		return _Utils_Tuple2(x, y - 1);
+	}
+	]);
+var $author$project$Main$validPositions = function (model) {
 	var vecTo = F2(
-		function (_v2, _v3) {
-			var x1 = _v2.a;
-			var y1 = _v2.b;
-			var x2 = _v3.a;
-			var y2 = _v3.b;
+		function (_v4, _v5) {
+			var x1 = _v4.a;
+			var y1 = _v4.b;
+			var x2 = _v5.a;
+			var y2 = _v5.b;
 			return _Utils_Tuple2(x1 - x2, y1 - y2);
 		});
 	var inbounds = F2(
@@ -11832,23 +11887,19 @@ var $author$project$Main$validMoves = function (model) {
 				$elm$core$Basics$round(maxV)) < 0);
 		});
 	var straights = A2(
-		$elm$core$List$filter,
-		function (move) {
-			var _v1 = A2($author$project$Main$add, model.player, move);
-			var x = _v1.a;
-			var y = _v1.b;
-			return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && (!A2(
-				$elm$core$Dict$member,
-				A2($author$project$Main$add, model.player, move),
-				model.grid)));
+		$author$project$Position$neighbors,
+		{
+			directions: $author$project$Position$squareDirections,
+			validator: function (_v3) {
+				var x = _v3.a;
+				var y = _v3.b;
+				return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && (!A2(
+					$elm$core$Dict$member,
+					_Utils_Tuple2(x, y),
+					model.grid)));
+			}
 		},
-		_List_fromArray(
-			[
-				_Utils_Tuple2(1, 0),
-				_Utils_Tuple2(0, 1),
-				_Utils_Tuple2(-1, 0),
-				_Utils_Tuple2(0, -1)
-			]));
+		model.player);
 	var from = A2(
 		$elm$core$Maybe$withDefault,
 		model.player,
@@ -11860,51 +11911,59 @@ var $author$project$Main$validMoves = function (model) {
 				}),
 			A2($elm$core$Dict$get, model.player, model.grid)));
 	var diagonals = A2(
-		$elm$core$List$filter,
-		function (move) {
-			var relX = move.a;
-			var relY = move.b;
-			var _v0 = A2($author$project$Main$add, model.player, move);
-			var x = _v0.a;
-			var y = _v0.b;
-			return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && ((!A2(
-				$elm$core$Dict$member,
-				A2($author$project$Main$add, model.player, move),
-				model.grid)) && ((!_Utils_eq(
-				A2(
-					$author$project$Main$add,
+		$author$project$Position$neighbors,
+		{
+			directions: $author$project$Position$diagonalDirections,
+			validator: function (_v0) {
+				var x = _v0.a;
+				var y = _v0.b;
+				var sub = F2(
+					function (_v1, _v2) {
+						var x1 = _v1.a;
+						var y1 = _v1.b;
+						var x2 = _v2.a;
+						var y2 = _v2.b;
+						return _Utils_Tuple2(x2 - x1, y2 - y1);
+					});
+				var move = A2(
+					sub,
 					model.player,
-					_Utils_Tuple2(relX, 0)),
-				from)) && ((!_Utils_eq(
-				A2(
-					$author$project$Main$add,
-					model.player,
-					_Utils_Tuple2(0, relY)),
-				from)) && (!A3(
-				$author$project$Main$areLinked,
-				A2(
-					$author$project$Main$add,
-					model.player,
-					_Utils_Tuple2(relX, 0)),
-				A2(
-					$author$project$Main$add,
-					model.player,
-					_Utils_Tuple2(0, relY)),
-				model))))));
+					_Utils_Tuple2(x, y));
+				var relX = move.a;
+				var relY = move.b;
+				return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && ((!A2(
+					$elm$core$Dict$member,
+					A2($author$project$Main$add, model.player, move),
+					model.grid)) && ((!_Utils_eq(
+					A2(
+						$author$project$Main$add,
+						model.player,
+						_Utils_Tuple2(relX, 0)),
+					from)) && ((!_Utils_eq(
+					A2(
+						$author$project$Main$add,
+						model.player,
+						_Utils_Tuple2(0, relY)),
+					from)) && (!A3(
+					$author$project$Main$areLinked,
+					A2(
+						$author$project$Main$add,
+						model.player,
+						_Utils_Tuple2(relX, 0)),
+					A2(
+						$author$project$Main$add,
+						model.player,
+						_Utils_Tuple2(0, relY)),
+					model))))));
+			}
 		},
-		_List_fromArray(
-			[
-				_Utils_Tuple2(1, 1),
-				_Utils_Tuple2(-1, 1),
-				_Utils_Tuple2(-1, -1),
-				_Utils_Tuple2(1, -1)
-			]));
+		model.player);
 	return A2(
 		$elm$core$List$map,
 		function (pos) {
 			return _Utils_Tuple2(
 				_Utils_eq(
-					pos,
+					A2(vecTo, pos, model.player),
 					A2(vecTo, model.player, from)) ? 2 : 1,
 				pos);
 		},
@@ -11971,7 +12030,7 @@ var $elm$random$Random$weighted = F2(
 			A2($elm$random$Random$float, 0, total));
 	});
 var $author$project$Main$updateFrame = function (model) {
-	var moves = $author$project$Main$validMoves(model);
+	var moves = $author$project$Main$validPositions(model);
 	if (!moves.b) {
 		return $author$project$Main$moveBack(model);
 	} else {
@@ -12080,9 +12139,9 @@ var $author$project$Main$update = F2(
 	});
 var $author$project$Main$Select = {$: 'Select'};
 var $noahzgordon$elm_color_extra$Color$Convert$labToXyz = function (_v0) {
-	var b = _v0.b;
-	var a = _v0.a;
 	var l = _v0.l;
+	var a = _v0.a;
+	var b = _v0.b;
 	var y = (l + 16) / 116;
 	var c = function (ch) {
 		var ch_ = (ch * ch) * ch;
@@ -12103,9 +12162,9 @@ var $avh4$elm_color$Color$rgb = F3(
 		return A4($avh4$elm_color$Color$RgbaSpace, r, g, b, 1.0);
 	});
 var $noahzgordon$elm_color_extra$Color$Convert$xyzToColor = function (_v0) {
-	var z = _v0.z;
-	var y = _v0.y;
 	var x = _v0.x;
+	var y = _v0.y;
+	var z = _v0.z;
 	var z_ = z / 100;
 	var y_ = y / 100;
 	var x_ = x / 100;
@@ -12127,12 +12186,12 @@ var $author$project$Main$adjustColor = F3(
 	function (_v0, potential, color) {
 		var width = _v0.width;
 		var height = _v0.height;
-		var muliplier = 1 - (potential / $author$project$Main$maxPotential(
-			{height: height, width: width}));
 		var _v1 = $noahzgordon$elm_color_extra$Color$Convert$colorToLab(color);
 		var l = _v1.l;
 		var a = _v1.a;
 		var b = _v1.b;
+		var _v2 = 1 - (potential / $author$project$Main$maxPotential(
+			{height: height, width: width}));
 		return $noahzgordon$elm_color_extra$Color$Convert$labToColor(
 			{
 				a: a,
