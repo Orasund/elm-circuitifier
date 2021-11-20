@@ -11848,29 +11848,41 @@ var $author$project$Position$neighbors = F2(
 			args.directions);
 	});
 var $elm$core$Basics$not = _Basics_not;
-var $author$project$Position$squareDirections = _List_fromArray(
-	[
-		function (_v0) {
+var $elm$core$Tuple$mapBoth = F3(
+	function (funcA, funcB, _v0) {
 		var x = _v0.a;
 		var y = _v0.b;
-		return _Utils_Tuple2(x + 1, y);
-	},
-		function (_v1) {
-		var x = _v1.a;
-		var y = _v1.b;
-		return _Utils_Tuple2(x - 1, y);
-	},
-		function (_v2) {
-		var x = _v2.a;
-		var y = _v2.b;
-		return _Utils_Tuple2(x, y + 1);
-	},
-		function (_v3) {
-		var x = _v3.a;
-		var y = _v3.b;
-		return _Utils_Tuple2(x, y - 1);
-	}
-	]);
+		return _Utils_Tuple2(
+			funcA(x),
+			funcB(y));
+	});
+var $author$project$Position$squareOps = {
+	directions: _List_fromArray(
+		[
+			function (_v0) {
+			var x = _v0.a;
+			var y = _v0.b;
+			return _Utils_Tuple2(x + 1, y);
+		},
+			function (_v1) {
+			var x = _v1.a;
+			var y = _v1.b;
+			return _Utils_Tuple2(x - 1, y);
+		},
+			function (_v2) {
+			var x = _v2.a;
+			var y = _v2.b;
+			return _Utils_Tuple2(x, y + 1);
+		},
+			function (_v3) {
+			var x = _v3.a;
+			var y = _v3.b;
+			return _Utils_Tuple2(x, y - 1);
+		}
+		]),
+	toPoint: A2($elm$core$Tuple$mapBoth, $elm$core$Basics$toFloat, $elm$core$Basics$toFloat)
+};
+var $author$project$Main$positionOps = $author$project$Position$squareOps;
 var $author$project$Main$validPositions = function (model) {
 	var vecTo = F2(
 		function (_v4, _v5) {
@@ -11889,7 +11901,7 @@ var $author$project$Main$validPositions = function (model) {
 	var straights = A2(
 		$author$project$Position$neighbors,
 		{
-			directions: $author$project$Position$squareDirections,
+			directions: $author$project$Main$positionOps.directions,
 			validator: function (_v3) {
 				var x = _v3.a;
 				var y = _v3.b;
@@ -11967,7 +11979,7 @@ var $author$project$Main$validPositions = function (model) {
 					A2(vecTo, model.player, from)) ? 2 : 1,
 				pos);
 		},
-		_Utils_ap(straights, diagonals));
+		straights);
 };
 var $elm$random$Random$float = F2(
 	function (a, b) {
@@ -13242,15 +13254,17 @@ var $joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 		$joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
 };
 var $author$project$Main$line = F3(
-	function (_v0, _v1, _v2) {
+	function (_v0, p1, p2) {
 		var width = _v0.width;
 		var height = _v0.height;
 		var potential = _v0.potential;
 		var color = _v0.color;
-		var x1 = _v1.a;
-		var y1 = _v1.b;
-		var x2 = _v2.a;
-		var y2 = _v2.b;
+		var _v1 = p2;
+		var x2 = _v1.a;
+		var y2 = _v1.b;
+		var _v2 = p1;
+		var x1 = _v2.a;
+		var y1 = _v2.b;
 		return A2(
 			$joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
@@ -13286,7 +13300,7 @@ var $author$project$Main$viewCell = F2(
 				$author$project$Main$line,
 				{color: cell.color, height: height, potential: cell.potential, width: width},
 				pos,
-				cell.from),
+				$author$project$Main$positionOps.toPoint(cell.from)),
 			_Utils_eq(cell.to, _List_Nil) ? $elm$core$List$singleton(
 				A2(
 					$author$project$Main$circle,
@@ -13297,7 +13311,7 @@ var $author$project$Main$viewCell = F2(
 					$author$project$Main$line,
 					{color: cell.color, height: height, potential: cell.potential, width: width},
 					pos),
-				cell.to));
+				A2($elm$core$List$map, $author$project$Main$positionOps.toPoint, cell.to)));
 	});
 var $author$project$Main$view = function (model) {
 	return A2(
@@ -13324,7 +13338,7 @@ var $author$project$Main$view = function (model) {
 							A2(
 							$author$project$Main$bigCircle,
 							{color: $avh4$elm_color$Color$black, height: model.height, potential: model.potential, width: model.width},
-							model.player)
+							$author$project$Main$positionOps.toPoint(model.player))
 						]),
 					A2(
 						$elm$core$List$concatMap,
@@ -13338,7 +13352,9 @@ var $author$project$Main$view = function (model) {
 								return A2(
 									$elm$core$Maybe$map,
 									function (cell) {
-										return _Utils_Tuple2(pos, cell);
+										return _Utils_Tuple2(
+											$author$project$Main$positionOps.toPoint(pos),
+											cell);
 									},
 									maybe);
 							},

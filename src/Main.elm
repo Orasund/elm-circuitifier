@@ -15,10 +15,19 @@ import Html.Attributes exposing (style)
 import Html.Events as Events
 import Image exposing (Image)
 import Image.Color
-import Position
+import Position exposing (PositionOps)
 import Random exposing (Seed)
 import Task
 import Time
+
+
+type alias Position =
+    ( Int, Int )
+
+
+positionOps : PositionOps Position
+positionOps =
+    Position.squareOps
 
 
 maxPotential : { width : Float, height : Float } -> Int
@@ -137,7 +146,7 @@ validPositions model =
                                         |> Dict.member ( x, y )
                                         |> not
                                    )
-                    , directions = Position.squareDirections
+                    , directions = positionOps.directions
                     }
 
         from =
@@ -176,7 +185,7 @@ validPositions model =
         vecTo ( x1, y1 ) ( x2, y2 ) =
             ( x1 - x2, y1 - y2 )
     in
-    (straights ++ diagonals)
+    straights
         |> List.map
             (\pos ->
                 ( if from |> vecTo model.player |> (==) (model.player |> vecTo pos) then
@@ -433,14 +442,14 @@ view model =
                 , potential = model.potential
                 , color = Color.black
                 }
-                model.player
+                (positionOps.toPoint model.player)
              ]
                 ++ (model.grid
                         |> Dict.toList
                         |> List.filterMap
                             (\( pos, maybe ) ->
                                 maybe
-                                    |> Maybe.map (\cell -> ( pos, cell ))
+                                    |> Maybe.map (\cell -> ( positionOps.toPoint pos, cell ))
                             )
                         |> List.concatMap (viewCell { width = model.width, height = model.height })
                    )
@@ -475,9 +484,16 @@ adjustColor { width, height } potential color =
 --Color.hsl hue saturation lightness
 
 
-line : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> ( Int, Int ) -> Renderable
-line { width, height, potential, color } ( x1, y1 ) ( x2, y2 ) =
-    Canvas.path ( toFloat x1 * zoom, toFloat y1 * zoom ) [ Canvas.lineTo ( toFloat x2 * zoom, toFloat y2 * zoom ) ]
+line : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> ( Float, Float ) -> Renderable
+line { width, height, potential, color } p1 p2 =
+    let
+        ( x1, y1 ) =
+            p1
+
+        ( x2, y2 ) =
+            p2
+    in
+    Canvas.path ( x1 * zoom, y1 * zoom ) [ Canvas.lineTo ( x2 * zoom, y2 * zoom ) ]
         |> List.singleton
         |> shapes
             [ Settings.stroke (color |> adjustColor { width = width, height = height } potential)
@@ -486,9 +502,9 @@ line { width, height, potential, color } ( x1, y1 ) ( x2, y2 ) =
             ]
 
 
-bigCircle : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> Renderable
+bigCircle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
 bigCircle { width, height, potential, color } ( x, y ) =
-    Canvas.circle ( toFloat x * zoom, toFloat y * zoom ) (lineWidth * 2)
+    Canvas.circle ( x * zoom, y * zoom ) (lineWidth * 2)
         |> List.singleton
         |> shapes
             [ Settings.fill
@@ -498,9 +514,9 @@ bigCircle { width, height, potential, color } ( x, y ) =
             ]
 
 
-circle : { width : Float, height : Float, potential : Int, color : Color } -> ( Int, Int ) -> Renderable
+circle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
 circle { width, height, potential, color } ( x, y ) =
-    Canvas.circle ( toFloat x * zoom, toFloat y * zoom ) (lineWidth * 1.5)
+    Canvas.circle ( x * zoom, y * zoom ) (lineWidth * 1.5)
         |> List.singleton
         |> shapes
             [ Settings.fill
@@ -510,9 +526,10 @@ circle { width, height, potential, color } ( x, y ) =
             ]
 
 
-viewCell : { width : Float, height : Float } -> ( ( Int, Int ), Cell ) -> List Renderable
+viewCell : { width : Float, height : Float } -> ( ( Float, Float ), Cell ) -> List Renderable
 viewCell { width, height } ( pos, cell ) =
     (cell.from
+        |> positionOps.toPoint
         |> line
             { width = width
             , height = height
@@ -533,6 +550,7 @@ viewCell { width, height } ( pos, cell ) =
 
             else
                 cell.to
+                    |> List.map positionOps.toPoint
                     |> List.map
                         (line
                             { width = width
