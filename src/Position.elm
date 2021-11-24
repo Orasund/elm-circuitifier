@@ -1,15 +1,17 @@
-module Position exposing (PositionOps, diagonalDirections, hexagonalDirections, neighbors, squareOps, triangluarOps)
+module Position exposing (PositionOps, diagonalDirections, hexagonalDirections, hexagonalOps, neighbors, squareOps, triangluarOps)
 
 
 type alias PositionOps position =
-    { directions : List (position -> position)
+    { zero : position
+    , directions : List (position -> position)
     , toPoint : position -> ( Float, Float )
     }
 
 
 squareOps : PositionOps ( Int, Int )
 squareOps =
-    { directions =
+    { zero = ( 0, 0 )
+    , directions =
         [ \( x, y ) -> ( x + 1, y )
         , \( x, y ) -> ( x - 1, y )
         , \( x, y ) -> ( x, y + 1 )
@@ -20,32 +22,61 @@ squareOps =
     }
 
 
-triangluarOps : PositionOps ( Int, Int, Bool )
+triangluarOps : PositionOps ( Int, Int, Int )
 triangluarOps =
-    { directions =
+    { zero = ( 0, 0, 1 )
+    , directions =
         [ \( x, y, b ) ->
             ( x
-            , internalApplyBool b y
-            , not b
+            , y + b
+            , -b
             )
-        , \( x, y, b ) -> ( x + 1, y, not b )
-        , \( x, y, b ) -> ( x - 1, y, not b )
+        , \( x, y, b ) -> ( x + 1, y, -b )
+        , \( x, y, b ) -> ( x - 1, y, -b )
         ]
     , toPoint =
         \( x, y, b ) ->
             ( x, y )
                 |> squareOps.toPoint
-                |> (if internalIsEven y then
+                --|> Tuple.mapSecond ((*) (sqrt 3 / 2))
+                {--|> (if internalIsEven y then
                         identity
 
                     else
-                        Tuple.mapBoth ((+) 0.5) ((*) (sqrt 3 / 2))
+                        Tuple.mapFirst ((+) 0.5)
+                   )--}
+                |> (if b > 0 then
+                        identity
+
+                    else
+                        Tuple.mapBoth identity ((+) -(sqrt 3 / 6))
                    )
-                |> (if b then
-                        identity
+    }
+
+
+hexagonalOps : PositionOps ( Int, Int )
+hexagonalOps =
+    { zero = ( 0, 0 )
+    , directions =
+        squareOps.directions
+            ++ [ \( x, y ) ->
+                    ( internalApplyBool (internalIsEven y) x
+                    , y - 1
+                    )
+               , \( x, y ) ->
+                    ( internalApplyBool (internalIsEven y) x
+                    , y + 1
+                    )
+               ]
+    , toPoint =
+        \( x, y ) ->
+            ( x, y )
+                |> squareOps.toPoint
+                |> (if not <| internalIsEven y then
+                        Tuple.mapFirst ((+) -0.5)
 
                     else
-                        Tuple.mapBoth ((+) 0.5) ((+) -(sqrt 3 / 6))
+                        identity
                    )
     }
 
@@ -101,7 +132,7 @@ internalApplyBool b =
         (+) 1
 
     else
-        (-) 1
+        (+) -1
 
 
 internalIsEven : Int -> Bool

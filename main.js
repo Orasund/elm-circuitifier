@@ -5893,31 +5893,48 @@ var $elm$core$Dict$fromList = function (assocs) {
 		$elm$core$Dict$empty,
 		assocs);
 };
-var $elm$core$Dict$map = F2(
-	function (func, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return $elm$core$Dict$RBEmpty_elm_builtin;
-		} else {
-			var color = dict.a;
-			var key = dict.b;
-			var value = dict.c;
-			var left = dict.d;
-			var right = dict.e;
-			return A5(
-				$elm$core$Dict$RBNode_elm_builtin,
-				color,
-				key,
-				A2(func, key, value),
-				A2($elm$core$Dict$map, func, left),
-				A2($elm$core$Dict$map, func, right));
-		}
-	});
 var $elm$core$Basics$round = _Basics_round;
 var $author$project$Main$maxPotential = function (_v0) {
 	var width = _v0.width;
 	var height = _v0.height;
 	return ($elm$core$Basics$round(width + height) / 4) | 0;
 };
+var $elm$core$Tuple$mapBoth = F3(
+	function (funcA, funcB, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			funcA(x),
+			funcB(y));
+	});
+var $author$project$Position$squareOps = {
+	directions: _List_fromArray(
+		[
+			function (_v0) {
+			var x = _v0.a;
+			var y = _v0.b;
+			return _Utils_Tuple2(x + 1, y);
+		},
+			function (_v1) {
+			var x = _v1.a;
+			var y = _v1.b;
+			return _Utils_Tuple2(x - 1, y);
+		},
+			function (_v2) {
+			var x = _v2.a;
+			var y = _v2.b;
+			return _Utils_Tuple2(x, y + 1);
+		},
+			function (_v3) {
+			var x = _v3.a;
+			var y = _v3.b;
+			return _Utils_Tuple2(x, y - 1);
+		}
+		]),
+	toPoint: A2($elm$core$Tuple$mapBoth, $elm$core$Basics$toFloat, $elm$core$Basics$toFloat),
+	zero: _Utils_Tuple2(0, 0)
+};
+var $author$project$Main$positionOps = $author$project$Position$squareOps;
 var $elm$core$Basics$pow = _Basics_pow;
 var $avh4$elm_color$Color$toRgba = function (_v0) {
 	var r = _v0.a;
@@ -6010,26 +6027,25 @@ var $author$project$Main$setWhiteAs = function (_v0) {
 		});
 };
 var $author$project$Main$new = function (flag) {
-	var _v0 = _Utils_Tuple2(
-		$elm$core$Basics$round(flag.width / 2),
-		$elm$core$Basics$round(flag.height / 2));
-	var x = _v0.a;
-	var y = _v0.b;
 	return {
-		grid: A2(
-			$elm$core$Dict$map,
-			F2(
-				function (_v1, _v2) {
-					return $elm$core$Maybe$Nothing;
-				}),
-			$elm$core$Dict$fromList(
+		grid: $elm$core$Dict$fromList(
+			A2(
+				$elm$core$List$map,
+				function (_v0) {
+					var _v1 = _v0.a;
+					var x = _v1.a;
+					var y = _v1.b;
+					return _Utils_Tuple2(
+						_Utils_Tuple2(x, y),
+						$elm$core$Maybe$Nothing);
+				},
 				A2(
 					$author$project$Main$setWhiteAs,
 					_Utils_Tuple2(90, 100),
 					flag.image))),
 		height: flag.height,
 		image: $elm$core$Dict$fromList(flag.image),
-		player: _Utils_Tuple2(x, y),
+		player: $author$project$Main$positionOps.zero,
 		potential: $author$project$Main$maxPotential(
 			{height: flag.height, width: flag.width}),
 		running: false,
@@ -11649,7 +11665,14 @@ var $author$project$Main$applyMove = F2(
 							color: A2(
 								$elm$core$Maybe$withDefault,
 								$avh4$elm_color$Color$black,
-								A2($elm$core$Dict$get, newPlayer, model.image)),
+								A2(
+									$elm$core$Dict$get,
+									A3(
+										$elm$core$Tuple$mapBoth,
+										$elm$core$Basics$round,
+										$elm$core$Basics$round,
+										$author$project$Main$positionOps.toPoint(newPlayer)),
+									model.image)),
 							from: model.player,
 							potential: newPotential,
 							to: _List_Nil
@@ -11755,88 +11778,6 @@ var $author$project$Main$moveBack = function (model) {
 			});
 	}
 };
-var $author$project$Main$add = F2(
-	function (_v0, _v1) {
-		var x1 = _v0.a;
-		var y1 = _v0.b;
-		var x2 = _v1.a;
-		var y2 = _v1.b;
-		return _Utils_Tuple2(x1 + x2, y1 + y2);
-	});
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $author$project$Main$areLinked = F3(
-	function (p1, p2, model) {
-		return A2(
-			$elm$core$List$any,
-			function (_v0) {
-				var pos1 = _v0.a;
-				var pos2 = _v0.b;
-				return A2(
-					$elm$core$Maybe$withDefault,
-					false,
-					A2(
-						$elm$core$Maybe$map,
-						A2(
-							$elm$core$Basics$composeR,
-							$elm$core$Maybe$map(
-								A2(
-									$elm$core$Basics$composeR,
-									function ($) {
-										return $.from;
-									},
-									$elm$core$Basics$eq(pos2))),
-							$elm$core$Maybe$withDefault(false)),
-						A2($elm$core$Dict$get, pos1, model.grid)));
-			},
-			_List_fromArray(
-				[
-					_Utils_Tuple2(p1, p2),
-					_Utils_Tuple2(p2, p1)
-				]));
-	});
-var $author$project$Position$diagonalDirections = _List_fromArray(
-	[
-		function (_v0) {
-		var x = _v0.a;
-		var y = _v0.b;
-		return _Utils_Tuple2(x + 1, y + 1);
-	},
-		function (_v1) {
-		var x = _v1.a;
-		var y = _v1.b;
-		return _Utils_Tuple2(x - 1, y - 1);
-	},
-		function (_v2) {
-		var x = _v2.a;
-		var y = _v2.b;
-		return _Utils_Tuple2(x - 1, y + 1);
-	},
-		function (_v3) {
-		var x = _v3.a;
-		var y = _v3.b;
-		return _Utils_Tuple2(x + 1, y - 1);
-	}
-	]);
 var $author$project$Position$neighbors = F2(
 	function (args, pos) {
 		return A2(
@@ -11848,48 +11789,13 @@ var $author$project$Position$neighbors = F2(
 			args.directions);
 	});
 var $elm$core$Basics$not = _Basics_not;
-var $elm$core$Tuple$mapBoth = F3(
-	function (funcA, funcB, _v0) {
-		var x = _v0.a;
-		var y = _v0.b;
-		return _Utils_Tuple2(
-			funcA(x),
-			funcB(y));
-	});
-var $author$project$Position$squareOps = {
-	directions: _List_fromArray(
-		[
-			function (_v0) {
-			var x = _v0.a;
-			var y = _v0.b;
-			return _Utils_Tuple2(x + 1, y);
-		},
-			function (_v1) {
-			var x = _v1.a;
-			var y = _v1.b;
-			return _Utils_Tuple2(x - 1, y);
-		},
-			function (_v2) {
-			var x = _v2.a;
-			var y = _v2.b;
-			return _Utils_Tuple2(x, y + 1);
-		},
-			function (_v3) {
-			var x = _v3.a;
-			var y = _v3.b;
-			return _Utils_Tuple2(x, y - 1);
-		}
-		]),
-	toPoint: A2($elm$core$Tuple$mapBoth, $elm$core$Basics$toFloat, $elm$core$Basics$toFloat)
-};
-var $author$project$Main$positionOps = $author$project$Position$squareOps;
 var $author$project$Main$validPositions = function (model) {
 	var vecTo = F2(
-		function (_v4, _v5) {
-			var x1 = _v4.a;
-			var y1 = _v4.b;
-			var x2 = _v5.a;
-			var y2 = _v5.b;
+		function (_v1, _v2) {
+			var x1 = _v1.a;
+			var y1 = _v1.b;
+			var x2 = _v2.a;
+			var y2 = _v2.b;
 			return _Utils_Tuple2(x1 - x2, y1 - y2);
 		});
 	var inbounds = F2(
@@ -11902,9 +11808,9 @@ var $author$project$Main$validPositions = function (model) {
 		$author$project$Position$neighbors,
 		{
 			directions: $author$project$Main$positionOps.directions,
-			validator: function (_v3) {
-				var x = _v3.a;
-				var y = _v3.b;
+			validator: function (_v0) {
+				var x = _v0.a;
+				var y = _v0.b;
 				return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && (!A2(
 					$elm$core$Dict$member,
 					_Utils_Tuple2(x, y),
@@ -11922,54 +11828,6 @@ var $author$project$Main$validPositions = function (model) {
 					return $.from;
 				}),
 			A2($elm$core$Dict$get, model.player, model.grid)));
-	var diagonals = A2(
-		$author$project$Position$neighbors,
-		{
-			directions: $author$project$Position$diagonalDirections,
-			validator: function (_v0) {
-				var x = _v0.a;
-				var y = _v0.b;
-				var sub = F2(
-					function (_v1, _v2) {
-						var x1 = _v1.a;
-						var y1 = _v1.b;
-						var x2 = _v2.a;
-						var y2 = _v2.b;
-						return _Utils_Tuple2(x2 - x1, y2 - y1);
-					});
-				var move = A2(
-					sub,
-					model.player,
-					_Utils_Tuple2(x, y));
-				var relX = move.a;
-				var relY = move.b;
-				return A2(inbounds, x, model.width) && (A2(inbounds, y, model.height) && ((!A2(
-					$elm$core$Dict$member,
-					A2($author$project$Main$add, model.player, move),
-					model.grid)) && ((!_Utils_eq(
-					A2(
-						$author$project$Main$add,
-						model.player,
-						_Utils_Tuple2(relX, 0)),
-					from)) && ((!_Utils_eq(
-					A2(
-						$author$project$Main$add,
-						model.player,
-						_Utils_Tuple2(0, relY)),
-					from)) && (!A3(
-					$author$project$Main$areLinked,
-					A2(
-						$author$project$Main$add,
-						model.player,
-						_Utils_Tuple2(relX, 0)),
-					A2(
-						$author$project$Main$add,
-						model.player,
-						_Utils_Tuple2(0, relY)),
-					model))))));
-			}
-		},
-		model.player);
 	return A2(
 		$elm$core$List$map,
 		function (pos) {
@@ -12124,17 +11982,10 @@ var $author$project$Main$update = F2(
 						'no transparency',
 						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none)) : _Utils_Tuple2(
 						function (m) {
-							var _v4 = m.player;
-							var x = _v4.a;
-							var y = _v4.b;
 							return _Utils_update(
 								m,
 								{
-									grid: A3(
-										$elm$core$Dict$insert,
-										_Utils_Tuple2(x, y),
-										$elm$core$Maybe$Nothing,
-										m.grid),
+									grid: A3($elm$core$Dict$insert, m.player, $elm$core$Maybe$Nothing, m.grid),
 									running: true
 								});
 						}(
@@ -12367,21 +12218,18 @@ var $author$project$Main$bigCircle = F2(
 		var color = _v0.color;
 		var x = _v1.a;
 		var y = _v1.b;
+		var dimensions = {height: height, width: width};
 		return A2(
 			$joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$fill(
-					A3(
-						$author$project$Main$adjustColor,
-						{height: height, width: width},
-						potential,
-						color))
+					A3($author$project$Main$adjustColor, dimensions, potential, color))
 				]),
 			$elm$core$List$singleton(
 				A2(
 					$joakin$elm_canvas$Canvas$circle,
-					_Utils_Tuple2(x * $author$project$Main$zoom, y * $author$project$Main$zoom),
+					_Utils_Tuple2(x, y),
 					$author$project$Main$lineWidth * 2)));
 	});
 var $elm$html$Html$button = _VirtualDom_node('button');
@@ -13175,29 +13023,30 @@ var $joakin$elm_canvas$Canvas$toHtml = F3(
 			attrs,
 			entities);
 	});
+var $author$project$Main$pointToPixel = F2(
+	function (args, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2((args.width / 2) + (x * $author$project$Main$zoom), (args.height / 2) + (y * $author$project$Main$zoom));
+	});
 var $author$project$Main$circle = F2(
-	function (_v0, _v1) {
+	function (_v0, p) {
 		var width = _v0.width;
 		var height = _v0.height;
 		var potential = _v0.potential;
 		var color = _v0.color;
-		var x = _v1.a;
-		var y = _v1.b;
+		var dimensions = {height: height, width: width};
 		return A2(
 			$joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$fill(
-					A3(
-						$author$project$Main$adjustColor,
-						{height: height, width: width},
-						potential,
-						color))
+					A3($author$project$Main$adjustColor, dimensions, potential, color))
 				]),
 			$elm$core$List$singleton(
 				A2(
 					$joakin$elm_canvas$Canvas$circle,
-					_Utils_Tuple2(x * $author$project$Main$zoom, y * $author$project$Main$zoom),
+					A2($author$project$Main$pointToPixel, dimensions, p),
 					$author$project$Main$lineWidth * 1.5)));
 	});
 var $joakin$elm_canvas$Canvas$Settings$Line$RoundCap = {$: 'RoundCap'};
@@ -13259,33 +13108,24 @@ var $author$project$Main$line = F3(
 		var height = _v0.height;
 		var potential = _v0.potential;
 		var color = _v0.color;
-		var _v1 = p2;
-		var x2 = _v1.a;
-		var y2 = _v1.b;
-		var _v2 = p1;
-		var x1 = _v2.a;
-		var y1 = _v2.b;
+		var dimensions = {height: height, width: width};
 		return A2(
 			$joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
 				[
 					$joakin$elm_canvas$Canvas$Settings$stroke(
-					A3(
-						$author$project$Main$adjustColor,
-						{height: height, width: width},
-						potential,
-						color)),
+					A3($author$project$Main$adjustColor, dimensions, potential, color)),
 					$joakin$elm_canvas$Canvas$Settings$Line$lineWidth($author$project$Main$lineWidth),
 					$joakin$elm_canvas$Canvas$Settings$Line$lineCap($joakin$elm_canvas$Canvas$Settings$Line$RoundCap)
 				]),
 			$elm$core$List$singleton(
 				A2(
 					$joakin$elm_canvas$Canvas$path,
-					_Utils_Tuple2(x1 * $author$project$Main$zoom, y1 * $author$project$Main$zoom),
+					A2($author$project$Main$pointToPixel, dimensions, p1),
 					_List_fromArray(
 						[
 							$joakin$elm_canvas$Canvas$lineTo(
-							_Utils_Tuple2(x2 * $author$project$Main$zoom, y2 * $author$project$Main$zoom))
+							A2($author$project$Main$pointToPixel, dimensions, p2))
 						]))));
 	});
 var $author$project$Main$viewCell = F2(

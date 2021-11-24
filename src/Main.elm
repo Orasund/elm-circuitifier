@@ -55,16 +55,16 @@ lineWidth =
 
 
 type alias Cell =
-    { from : ( Int, Int )
-    , to : List ( Int, Int )
+    { from : Position
+    , to : List Position
     , potential : Int
     , color : Color
     }
 
 
 type alias Model =
-    { grid : Dict ( Int, Int ) (Maybe Cell)
-    , player : ( Int, Int )
+    { grid : Dict Position (Maybe Cell)
+    , player : Position
     , seed : Seed
     , running : Bool
     , potential : Int
@@ -91,16 +91,12 @@ init () =
 
 new : { image : List ( ( Int, Int ), Color ), width : Float, height : Float } -> Model
 new flag =
-    let
-        ( x, y ) =
-            ( round <| flag.width / 2, round <| flag.height / 2 )
-    in
     { grid =
         flag.image
             |> setWhiteAs ( 90, 100 )
+            |> List.map (\( ( x, y ), _ ) -> ( ( x, y ), Nothing ))
             |> Dict.fromList
-            |> Dict.map (\_ _ -> Nothing)
-    , player = ( x, y )
+    , player = positionOps.zero
     , seed = Random.initialSeed 42
     , running = False
     , potential = maxPotential { width = flag.width, height = flag.height }
@@ -114,7 +110,7 @@ add ( x1, y1 ) ( x2, y2 ) =
     ( x1 + x2, y1 + y2 )
 
 
-areLinked : ( Int, Int ) -> ( Int, Int ) -> Model -> Bool
+areLinked : Position -> Position -> Model -> Bool
 areLinked p1 p2 model =
     [ ( p1, p2 ), ( p2, p1 ) ]
         |> List.any
@@ -129,7 +125,7 @@ areLinked p1 p2 model =
             )
 
 
-validPositions : Model -> List ( Float, ( Int, Int ) )
+validPositions : Model -> List ( Float, Position )
 validPositions model =
     let
         inbounds v maxV =
@@ -155,33 +151,6 @@ validPositions model =
                 |> Maybe.andThen (Maybe.map .from)
                 |> Maybe.withDefault model.player
 
-        diagonals =
-            model.player
-                |> Position.neighbors
-                    { validator =
-                        \( x, y ) ->
-                            let
-                                sub ( x1, y1 ) ( x2, y2 ) =
-                                    ( x2 - x1, y2 - y1 )
-
-                                (( relX, relY ) as move) =
-                                    ( x, y ) |> sub model.player
-                            in
-                            inbounds x model.width
-                                && inbounds y model.height
-                                && (model.grid
-                                        |> Dict.member (move |> add model.player)
-                                        |> not
-                                   )
-                                && ((( relX, 0 ) |> add model.player) /= from)
-                                && ((( 0, relY ) |> add model.player) /= from)
-                                && (model
-                                        |> areLinked (( relX, 0 ) |> add model.player) (( 0, relY ) |> add model.player)
-                                        |> not
-                                   )
-                    , directions = Position.diagonalDirections
-                    }
-
         vecTo ( x1, y1 ) ( x2, y2 ) =
             ( x1 - x2, y1 - y2 )
     in
@@ -198,7 +167,7 @@ validPositions model =
             )
 
 
-applyMove : ( ( Int, Int ), Seed ) -> Model -> Model
+applyMove : ( Position, Seed ) -> Model -> Model
 applyMove ( newPlayer, seed ) model =
     let
         newPotential =
@@ -224,7 +193,11 @@ applyMove ( newPlayer, seed ) model =
                      , potential = newPotential
                      , color =
                         model.image
-                            |> Dict.get newPlayer
+                            |> Dict.get
+                                (newPlayer
+                                    |> positionOps.toPoint
+                                    |> Tuple.mapBoth round round
+                                )
                             |> Maybe.withDefault Color.black
                      }
                         |> Just
@@ -405,16 +378,11 @@ update msg model =
                             , height = toFloat height
                             }
                             |> (\m ->
-                                    let
-                                        ( x, y ) =
-                                            m.player
-                                    in
                                     { m
                                         | grid =
                                             m.grid
-                                                |> Dict.insert ( x, y ) Nothing
-                                        , running =
-                                            True
+                                                |> Dict.insert m.player Nothing
+                                        , running = True
                                     }
                                )
                         , Cmd.none
@@ -484,19 +452,23 @@ adjustColor { width, height } potential color =
 --Color.hsl hue saturation lightness
 
 
+pointToPixel : { width : Float, height : Float } -> ( Float, Float ) -> ( Float, Float )
+pointToPixel args ( x, y ) =
+    ( args.width / 2 + x * zoom, args.height / 2 + y * zoom )
+
+
 line : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> ( Float, Float ) -> Renderable
 line { width, height, potential, color } p1 p2 =
     let
-        ( x1, y1 ) =
-            p1
-
-        ( x2, y2 ) =
-            p2
+        dimensions =
+            { width = width
+            , height = height
+            }
     in
-    Canvas.path ( x1 * zoom, y1 * zoom ) [ Canvas.lineTo ( x2 * zoom, y2 * zoom ) ]
+    Canvas.path (p1 |> pointToPixel dimensions) [ Canvas.lineTo (p2 |> pointToPixel dimensions) ]
         |> List.singleton
         |> shapes
-            [ Settings.stroke (color |> adjustColor { width = width, height = height } potential)
+            [ Settings.stroke (color |> adjustColor dimensions potential)
             , Line.lineWidth lineWidth
             , Line.lineCap Line.RoundCap
             ]
@@ -504,24 +476,36 @@ line { width, height, potential, color } p1 p2 =
 
 bigCircle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
 bigCircle { width, height, potential, color } ( x, y ) =
-    Canvas.circle ( x * zoom, y * zoom ) (lineWidth * 2)
+    let
+        dimensions =
+            { width = width
+            , height = height
+            }
+    in
+    Canvas.circle ( x, y ) (lineWidth * 2)
         |> List.singleton
         |> shapes
             [ Settings.fill
                 (color
-                    |> adjustColor { width = width, height = height } potential
+                    |> adjustColor dimensions potential
                 )
             ]
 
 
 circle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
-circle { width, height, potential, color } ( x, y ) =
-    Canvas.circle ( x * zoom, y * zoom ) (lineWidth * 1.5)
+circle { width, height, potential, color } p =
+    let
+        dimensions =
+            { width = width
+            , height = height
+            }
+    in
+    Canvas.circle (p |> pointToPixel dimensions) (lineWidth * 1.5)
         |> List.singleton
         |> shapes
             [ Settings.fill
                 (color
-                    |> adjustColor { width = width, height = height } potential
+                    |> adjustColor dimensions potential
                 )
             ]
 
