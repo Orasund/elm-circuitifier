@@ -63,7 +63,7 @@ hexagonalOps =
         \( x, y ) ->
             ( x, y )
                 |> squareOps.toPoint
-                |> (if not <| internalIsEven y then
+                |> (if not (internalIsEven y) then
                         Tuple.mapFirst ((+) -0.5)
 
                     else
@@ -110,7 +110,7 @@ hexagonalDirections =
                 , y
                 )
            , \( x, y ) ->
-                ( internalApplyBool (not <| internalIsEven x) x
+                ( internalApplyBool (not (internalIsEven x)) x
                 , y
                 )
            ]

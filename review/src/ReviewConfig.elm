@@ -20,6 +20,7 @@ import NoUnsortedConstructors
 import NoUnsortedRecordFields
 import NoTypeAliasConstructorCall
 import NoLongImportLines
+import NoLeftPizza
 
 config : List Rule
 config =
@@ -28,4 +29,5 @@ config =
     , NoUnsortedRecordFields.rule
     , NoTypeAliasConstructorCall.rule
     , NoLongImportLines.rule
+    , NoLeftPizza.rule NoLeftPizza.Any
     ]

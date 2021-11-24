@@ -340,7 +340,7 @@ view model =
         , style "align-items" "center"
         ]
         [ Canvas.toHtml
-            ( round <| model.width * zoom, round <| model.height * zoom )
+            ( round (model.width * zoom), round (model.height * zoom) )
             []
             --style "border" "10px solid rgba(0,0,0,0.1)" ]
             ([ clearScreen { height = model.height, width = model.width }
