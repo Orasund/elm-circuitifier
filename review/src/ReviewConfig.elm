@@ -16,14 +16,10 @@ import NoAlways
 import ReviewPipelineStyles.Premade
 import ReviewPipelineStyles
 import ReviewPipelineStyles.Fixes
+import NoUnsortedConstructors
 
 config : List Rule
 config =
     [ NoAlways.rule
-    , ( [ ReviewPipelineStyles.Premade.noMultilineLeftComposition 
-        , ReviewPipelineStyles.Premade.noPipelinesWithSimpleInputs
-        , ReviewPipelineStyles.Premade.noRepeatedParentheticalApplication
-        , ReviewPipelineStyles.Premade.noMultilineLeftPizza
-        ] 
-      ) |> List.concat |> ReviewPipelineStyles.rule
+    , NoUnsortedConstructors.rule
     ]

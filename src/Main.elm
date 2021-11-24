@@ -76,9 +76,9 @@ type alias Model =
 
 type Msg
     = Frame
+    | GotBytes Bytes
     | GotSeed Seed
     | Select
-    | GotBytes Bytes
     | UploadedFile File
 
 
@@ -104,25 +104,6 @@ new flag =
     , height = flag.height
     , image = flag.image |> Dict.fromList
     }
-
-
-add ( x1, y1 ) ( x2, y2 ) =
-    ( x1 + x2, y1 + y2 )
-
-
-areLinked : Position -> Position -> Model -> Bool
-areLinked p1 p2 model =
-    [ ( p1, p2 ), ( p2, p1 ) ]
-        |> List.any
-            (\( pos1, pos2 ) ->
-                model.grid
-                    |> Dict.get pos1
-                    |> Maybe.map
-                        (Maybe.map (.from >> (==) pos2)
-                            >> Maybe.withDefault False
-                        )
-                    |> Maybe.withDefault False
-            )
 
 
 validPositions : Model -> List ( Float, Position )
@@ -339,15 +320,6 @@ update msg model =
             , Cmd.none
             )
 
-        GotSeed seed ->
-            ( { model | seed = seed }, Cmd.none )
-
-        Select ->
-            ( model, Select.file [ "image/png", "image/bmp" ] UploadedFile )
-
-        UploadedFile file ->
-            ( model, file |> File.toBytes |> Task.perform GotBytes )
-
         GotBytes bytes ->
             case bytes |> Image.decode of
                 Just image ->
@@ -364,9 +336,7 @@ update msg model =
                             )
 
                         img =
-                            image
-                                |> convertImage
-                                |> resizeBy factor
+                            image |> convertImage |> resizeBy factor
                     in
                     if img == [] then
                         ( model, Cmd.none ) |> Debug.log "no transparency"
@@ -379,9 +349,7 @@ update msg model =
                             }
                             |> (\m ->
                                     { m
-                                        | grid =
-                                            m.grid
-                                                |> Dict.insert m.player Nothing
+                                        | grid = m.grid |> Dict.insert m.player Nothing
                                         , running = True
                                     }
                                )
@@ -390,6 +358,15 @@ update msg model =
 
                 Nothing ->
                     ( model, Cmd.none ) |> Debug.log "no image"
+
+        GotSeed seed ->
+            ( { model | seed = seed }, Cmd.none )
+
+        Select ->
+            ( model, Select.file [ "image/png", "image/bmp" ] UploadedFile )
+
+        UploadedFile file ->
+            ( model, file |> File.toBytes |> Task.perform GotBytes )
 
 
 view : Model -> Html Msg
@@ -550,7 +527,7 @@ viewCell { width, height } ( pos, cell ) =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if model.running then
-        Time.every 2 (always Frame)
+        Time.every 2 (\_ -> Frame)
 
     else
         Sub.none
