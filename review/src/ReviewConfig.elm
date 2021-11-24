@@ -17,9 +17,15 @@ import ReviewPipelineStyles.Premade
 import ReviewPipelineStyles
 import ReviewPipelineStyles.Fixes
 import NoUnsortedConstructors
+import NoUnsortedRecordFields
+import NoTypeAliasConstructorCall
+import NoLongImportLines
 
 config : List Rule
 config =
     [ NoAlways.rule
     , NoUnsortedConstructors.rule
+    , NoUnsortedRecordFields.rule
+    , NoTypeAliasConstructorCall.rule
+    , NoLongImportLines.rule
     ]

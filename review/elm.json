@@ -10,8 +10,11 @@
             "elm/core": "1.0.5",
             "fysiweb/elm-review-sorted": "1.0.3",
             "jfmengels/elm-review": "2.6.1",
+            "lxierita/no-typealias-constructor-call": "1.0.1",
+            "r-k-b/no-long-import-lines": "1.0.4",
             "sparksp/elm-review-always": "1.0.5",
-            "stil4m/elm-syntax": "7.2.8"
+            "stil4m/elm-syntax": "7.2.8",
+            "truqu/elm-review-noleftpizza": "2.0.0"
         },
         "indirect": {
             "elm/html": "1.0.0",

@@ -30,8 +30,8 @@ positionOps =
     Position.squareOps
 
 
-maxPotential : { width : Float, height : Float } -> Int
-maxPotential { width, height } =
+maxPotential : { height : Float, width : Float } -> Int
+maxPotential { height, width } =
     round (width + height) // 4
 
 
@@ -45,33 +45,22 @@ zoom =
     10
 
 
-stepSize : { width : Float, height : Float } -> Int
-stepSize { width, height } =
+stepSize : { height : Float, width : Float } -> Int
+stepSize { height, width } =
     1 + round ((width * height) / 1000)
 
 
+lineWidth : Float
 lineWidth =
     zoom / 4
 
 
 type alias Cell =
-    { from : Position
-    , to : List Position
-    , potential : Int
-    , color : Color
-    }
+    { color : Color, from : Position, potential : Int, to : List Position }
 
 
 type alias Model =
-    { grid : Dict Position (Maybe Cell)
-    , player : Position
-    , seed : Seed
-    , running : Bool
-    , potential : Int
-    , width : Float
-    , height : Float
-    , image : Dict ( Int, Int ) Color
-    }
+    { grid : Dict Position (Maybe Cell), height : Float, image : Dict ( Int, Int ) Color, player : Position, potential : Int, running : Bool, seed : Seed, width : Float }
 
 
 type Msg
@@ -84,25 +73,21 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init () =
-    ( new { image = [], width = 1, height = 1 }
+    ( new { height = 1, image = [], width = 1 }
     , Random.independentSeed |> Random.generate GotSeed
     )
 
 
-new : { image : List ( ( Int, Int ), Color ), width : Float, height : Float } -> Model
+new : { height : Float, image : List ( ( Int, Int ), Color ), width : Float } -> Model
 new flag =
-    { grid =
-        flag.image
-            |> setWhiteAs ( 90, 100 )
-            |> List.map (\( ( x, y ), _ ) -> ( ( x, y ), Nothing ))
-            |> Dict.fromList
-    , player = positionOps.zero
-    , seed = Random.initialSeed 42
-    , running = False
-    , potential = maxPotential { width = flag.width, height = flag.height }
-    , width = flag.width
+    { grid = flag.image |> setWhiteAs ( 90, 100 ) |> List.map (\( ( x, y ), _ ) -> ( ( x, y ), Nothing )) |> Dict.fromList
     , height = flag.height
     , image = flag.image |> Dict.fromList
+    , player = positionOps.zero
+    , potential = maxPotential { height = flag.height, width = flag.width }
+    , running = False
+    , seed = Random.initialSeed 42
+    , width = flag.width
     }
 
 
@@ -115,15 +100,12 @@ validPositions model =
         straights =
             model.player
                 |> Position.neighbors
-                    { validator =
+                    { directions = positionOps.directions
+                    , validator =
                         \( x, y ) ->
                             inbounds x model.width
                                 && inbounds y model.height
-                                && (model.grid
-                                        |> Dict.member ( x, y )
-                                        |> not
-                                   )
-                    , directions = positionOps.directions
+                                && (model.grid |> Dict.member ( x, y ) |> not)
                     }
 
         from =
@@ -155,34 +137,21 @@ applyMove ( newPlayer, seed ) model =
             model.potential - 2
     in
     { model
-        | player = newPlayer
-        , seed = seed
-        , potential = newPotential
-        , grid =
+        | grid =
             model.grid
                 |> Dict.update model.player
-                    (Maybe.map
-                        (Maybe.map
-                            (\cell ->
-                                { cell | to = newPlayer :: cell.to }
-                            )
-                        )
-                    )
+                    (Maybe.map (Maybe.map (\cell -> { cell | to = newPlayer :: cell.to })))
                 |> Dict.insert newPlayer
-                    ({ from = model.player
-                     , to = []
+                    ({ color = model.image |> Dict.get (newPlayer |> positionOps.toPoint |> Tuple.mapBoth round round) |> Maybe.withDefault Color.black
+                     , from = model.player
                      , potential = newPotential
-                     , color =
-                        model.image
-                            |> Dict.get
-                                (newPlayer
-                                    |> positionOps.toPoint
-                                    |> Tuple.mapBoth round round
-                                )
-                            |> Maybe.withDefault Color.black
+                     , to = []
                      }
                         |> Just
                     )
+        , player = newPlayer
+        , potential = newPotential
+        , seed = seed
     }
 
 
@@ -196,18 +165,12 @@ moveBack model =
     case model.grid |> Dict.get model.player of
         Just (Just { from }) ->
             { model
-                | player = from
-                , potential = newPotential
-                , grid =
+                | grid =
                     model.grid
                         |> Dict.update model.player
-                            (Maybe.map
-                                (Maybe.map
-                                    (\cell ->
-                                        { cell | potential = newPotential }
-                                    )
-                                )
-                            )
+                            (Maybe.map (Maybe.map (\cell -> { cell | potential = newPotential })))
+                , player = from
+                , potential = newPotential
             }
 
         _ ->
@@ -226,9 +189,9 @@ moveBack model =
 
             else
                 { model
-                    | player = pos
+                    | grid = model.grid |> Dict.insert pos Nothing
+                    , player = pos
                     , seed = seed
-                    , grid = model.grid |> Dict.insert pos Nothing
                 }
 
 
@@ -252,7 +215,7 @@ updateFrame model =
                         )
 
             else
-                moveBack { model | potential = maxPotential { width = model.width, height = model.height } // 2 }
+                moveBack { model | potential = maxPotential { height = model.height, width = model.width } // 2 }
 
 
 convertImage : Image -> List ( ( Int, Int ), Color )
@@ -294,7 +257,7 @@ resizeBy factor list =
                     (\maybe ->
                         maybe
                             |> Maybe.map (\v -> { v | value = v.value + 1 })
-                            |> Maybe.withDefault { value = 1, color = color }
+                            |> Maybe.withDefault { color = color, value = 1 }
                             |> Just
                     )
             )
@@ -314,7 +277,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Frame ->
-            ( List.repeat (stepSize { width = model.width, height = model.height }) ()
+            ( List.repeat (stepSize { height = model.height, width = model.width }) ()
                 |> List.foldl (\() -> updateFrame)
                     model
             , Cmd.none
@@ -343,9 +306,9 @@ update msg model =
 
                     else
                         ( new
-                            { image = img
+                            { height = toFloat height
+                            , image = img
                             , width = toFloat width
-                            , height = toFloat height
                             }
                             |> (\m ->
                                     { m
@@ -380,12 +343,12 @@ view model =
             ( round <| model.width * zoom, round <| model.height * zoom )
             []
             --style "border" "10px solid rgba(0,0,0,0.1)" ]
-            ([ clearScreen { width = model.width, height = model.height }
+            ([ clearScreen { height = model.height, width = model.width }
              , bigCircle
-                { width = model.width
+                { color = Color.black
                 , height = model.height
                 , potential = model.potential
-                , color = Color.black
+                , width = model.width
                 }
                 (positionOps.toPoint model.player)
              ]
@@ -396,31 +359,31 @@ view model =
                                 maybe
                                     |> Maybe.map (\cell -> ( positionOps.toPoint pos, cell ))
                             )
-                        |> List.concatMap (viewCell { width = model.width, height = model.height })
+                        |> List.concatMap (viewCell { height = model.height, width = model.width })
                    )
             )
         , Html.button [ Events.onClick Select ] [ Html.text "Select Image" ]
         ]
 
 
-clearScreen : { width : Float, height : Float } -> Renderable
-clearScreen { width, height } =
+clearScreen : { height : Float, width : Float } -> Renderable
+clearScreen { height, width } =
     shapes [ fill Color.white ] [ rect ( 0, 0 ) (width * zoom) (height * zoom) ]
 
 
-adjustColor : { width : Float, height : Float } -> Int -> Color -> Color
-adjustColor { width, height } potential color =
+adjustColor : { height : Float, width : Float } -> Int -> Color -> Color
+adjustColor { height, width } potential color =
     let
-        { l, a, b } =
+        { a, b, l } =
             color
                 |> Color.Convert.colorToLab
 
         _ =
-            1 - toFloat potential / toFloat (maxPotential { width = width, height = height })
+            1 - toFloat potential / toFloat (maxPotential { height = height, width = width })
     in
-    { l = max 0 (l * 90 / 100)
-    , a = a
+    { a = a
     , b = b
+    , l = max 0 (l * 90 / 100)
     }
         |> Color.Convert.labToColor
 
@@ -429,17 +392,17 @@ adjustColor { width, height } potential color =
 --Color.hsl hue saturation lightness
 
 
-pointToPixel : { width : Float, height : Float } -> ( Float, Float ) -> ( Float, Float )
+pointToPixel : { height : Float, width : Float } -> ( Float, Float ) -> ( Float, Float )
 pointToPixel args ( x, y ) =
     ( args.width / 2 + x * zoom, args.height / 2 + y * zoom )
 
 
-line : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> ( Float, Float ) -> Renderable
-line { width, height, potential, color } p1 p2 =
+line : { color : Color, height : Float, potential : Int, width : Float } -> ( Float, Float ) -> ( Float, Float ) -> Renderable
+line { color, height, potential, width } p1 p2 =
     let
         dimensions =
-            { width = width
-            , height = height
+            { height = height
+            , width = width
             }
     in
     Canvas.path (p1 |> pointToPixel dimensions) [ Canvas.lineTo (p2 |> pointToPixel dimensions) ]
@@ -451,12 +414,12 @@ line { width, height, potential, color } p1 p2 =
             ]
 
 
-bigCircle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
-bigCircle { width, height, potential, color } ( x, y ) =
+bigCircle : { color : Color, height : Float, potential : Int, width : Float } -> ( Float, Float ) -> Renderable
+bigCircle { color, height, potential, width } ( x, y ) =
     let
         dimensions =
-            { width = width
-            , height = height
+            { height = height
+            , width = width
             }
     in
     Canvas.circle ( x, y ) (lineWidth * 2)
@@ -469,12 +432,12 @@ bigCircle { width, height, potential, color } ( x, y ) =
             ]
 
 
-circle : { width : Float, height : Float, potential : Int, color : Color } -> ( Float, Float ) -> Renderable
-circle { width, height, potential, color } p =
+circle : { color : Color, height : Float, potential : Int, width : Float } -> ( Float, Float ) -> Renderable
+circle { color, height, potential, width } p =
     let
         dimensions =
-            { width = width
-            , height = height
+            { height = height
+            , width = width
             }
     in
     Canvas.circle (p |> pointToPixel dimensions) (lineWidth * 1.5)
@@ -487,24 +450,24 @@ circle { width, height, potential, color } p =
             ]
 
 
-viewCell : { width : Float, height : Float } -> ( ( Float, Float ), Cell ) -> List Renderable
-viewCell { width, height } ( pos, cell ) =
+viewCell : { height : Float, width : Float } -> ( ( Float, Float ), Cell ) -> List Renderable
+viewCell { height, width } ( pos, cell ) =
     (cell.from
         |> positionOps.toPoint
         |> line
-            { width = width
+            { color = cell.color
             , height = height
             , potential = cell.potential
-            , color = cell.color
+            , width = width
             }
             pos
     )
         :: (if cell.to == [] then
                 circle
-                    { width = width
+                    { color = cell.color
                     , height = height
                     , potential = cell.potential
-                    , color = cell.color
+                    , width = width
                     }
                     pos
                     |> List.singleton
@@ -514,10 +477,10 @@ viewCell { width, height } ( pos, cell ) =
                     |> List.map positionOps.toPoint
                     |> List.map
                         (line
-                            { width = width
+                            { color = cell.color
                             , height = height
                             , potential = cell.potential
-                            , color = cell.color
+                            , width = width
                             }
                             pos
                         )
@@ -537,7 +500,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { init = init
-        , view = view
-        , update = update
         , subscriptions = subscriptions
+        , update = update
+        , view = view
         }

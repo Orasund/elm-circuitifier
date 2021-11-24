@@ -2,30 +2,28 @@ module Position exposing (PositionOps, diagonalDirections, hexagonalDirections, 
 
 
 type alias PositionOps position =
-    { zero : position
-    , directions : List (position -> position)
+    { directions : List (position -> position)
     , toPoint : position -> ( Float, Float )
+    , zero : position
     }
 
 
 squareOps : PositionOps ( Int, Int )
 squareOps =
-    { zero = ( 0, 0 )
-    , directions =
+    { directions =
         [ \( x, y ) -> ( x + 1, y )
         , \( x, y ) -> ( x - 1, y )
         , \( x, y ) -> ( x, y + 1 )
         , \( x, y ) -> ( x, y - 1 )
         ]
-    , toPoint =
-        Tuple.mapBoth toFloat toFloat
+    , toPoint = Tuple.mapBoth toFloat toFloat
+    , zero = ( 0, 0 )
     }
 
 
 triangluarOps : PositionOps ( Int, Int, Int )
 triangluarOps =
-    { zero = ( 0, 0, 1 )
-    , directions =
+    { directions =
         [ \( x, y, b ) ->
             ( x
             , y + b
@@ -38,26 +36,19 @@ triangluarOps =
         \( x, y, b ) ->
             ( x, y )
                 |> squareOps.toPoint
-                --|> Tuple.mapSecond ((*) (sqrt 3 / 2))
-                {--|> (if internalIsEven y then
-                        identity
-
-                    else
-                        Tuple.mapFirst ((+) 0.5)
-                   )--}
                 |> (if b > 0 then
                         identity
 
                     else
                         Tuple.mapBoth identity ((+) -(sqrt 3 / 6))
                    )
+    , zero = ( 0, 0, 1 )
     }
 
 
 hexagonalOps : PositionOps ( Int, Int )
 hexagonalOps =
-    { zero = ( 0, 0 )
-    , directions =
+    { directions =
         squareOps.directions
             ++ [ \( x, y ) ->
                     ( internalApplyBool (internalIsEven y) x
@@ -78,13 +69,12 @@ hexagonalOps =
                     else
                         identity
                    )
+    , zero = ( 0, 0 )
     }
 
 
 neighbors :
-    { validator : pos -> Bool
-    , directions : List (pos -> pos)
-    }
+    { directions : List (pos -> pos), validator : pos -> Bool }
     -> pos
     -> List pos
 neighbors args pos =
